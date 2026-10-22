@@ -1,5 +1,6 @@
 import "server-only";
 import { createHmac } from "node:crypto";
+import { ConfigError } from "./errors";
 
 let warned = false;
 
@@ -7,7 +8,7 @@ function appSecret(): string {
   const secret = process.env.APP_SECRET;
   if (secret && secret.length >= 16) return secret;
   if (process.env.NODE_ENV === "production") {
-    throw new Error("APP_SECRET must be set (16+ characters) in production.");
+    throw new ConfigError("APP_SECRET", secret ? "is shorter than 16 characters" : "is not set");
   }
   if (!warned) {
     console.warn("[secretly] APP_SECRET not set; using an insecure development value.");

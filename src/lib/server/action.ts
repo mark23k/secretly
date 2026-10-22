@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type { RateLimitName } from "@/config/limits";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { ActionError, type ActionResult } from "./errors";
+import { ActionError, ConfigError, type ActionResult } from "./errors";
 import { getIpHash } from "./ip";
 import { enforceRateLimit } from "./rate-limit";
 import { requireVisitor, type Visitor } from "./visitor";
@@ -53,8 +53,27 @@ export function createAction<S extends z.ZodType, T>(config: {
       if (error instanceof ActionError) {
         return { ok: false, code: error.code, message: error.message, fieldErrors: error.fieldErrors };
       }
+      if (error instanceof ConfigError) {
+        console.error("[action] configuration error:", error.message);
+        return {
+          ok: false,
+          code: "unavailable",
+          message: `Secretly isn't fully set up yet: ${error.message} on the server.`,
+        };
+      }
       console.error("[action] unexpected error", error);
-      return { ok: false, code: "server", message: "Something went wrong on our side. Please try again." };
+      // A short, non-sensitive reference (e.g. a Postgres error code) so a bug report can be traced.
+      const ref =
+        error && typeof error === "object" && "code" in error && error.code
+          ? String(error.code)
+          : error instanceof Error
+            ? error.name
+            : "unknown";
+      return {
+        ok: false,
+        code: "server",
+        message: `Something went wrong on our side. Please try again. (error: ${ref.slice(0, 40)})`,
+      };
     }
   };
 }
