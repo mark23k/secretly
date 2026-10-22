@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getMyThoughts } from "@/lib/data/thoughts.server";
+import { getMyQuestions } from "@/lib/data/questions.server";
+import { QuestionCard } from "@/components/questions/question-card";
+import { QuestionFeedSkeleton } from "@/components/questions/question-feed";
 import { getSessionUser } from "@/lib/server/visitor";
 import { SignInPrompt } from "@/components/auth/sign-in-prompt";
 import { thoughtCategoryLabel } from "@/config/thoughts";
@@ -34,6 +37,25 @@ export default function MyPostsPage() {
           <Suspense fallback={<ThoughtFeedSkeleton />}>
             <MyThoughts />
           </Suspense>
+        </section>
+        <section aria-labelledby="my-questions" className="space-y-4">
+          <h2 id="my-questions" className="text-2xl font-normal">
+            Questions
+          </h2>
+          <Suspense fallback={<QuestionFeedSkeleton />}>
+            <MyQuestions />
+          </Suspense>
+        </section>
+        <section aria-labelledby="my-secrets" className="space-y-3">
+          <h2 id="my-secrets" className="text-2xl font-normal">
+            Secrets
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Secrets live in their own private inbox, with the replies strangers sent you.
+          </p>
+          <Button asChild variant="outline">
+            <Link href="/exchange/inbox">Open my secrets</Link>
+          </Button>
         </section>
       </div>
     </div>
@@ -85,6 +107,32 @@ async function MyThoughts() {
           </li>
         );
       })}
+    </ul>
+  );
+}
+
+async function MyQuestions() {
+  if (!(await getSessionUser())) return null;
+  const questions = await getMyQuestions();
+  if (questions.length === 0) {
+    return (
+      <EmptyState title="No questions yet" description="Ask the thing you've always wondered, anonymously.">
+        <Button asChild>
+          <Link href="/ask/new">Ask a question</Link>
+        </Button>
+      </EmptyState>
+    );
+  }
+  return (
+    <ul className="space-y-3">
+      {questions.map((q) => (
+        <li key={q.id}>
+          <QuestionCard question={q} />
+          {q.status !== "published" ? (
+            <p className="mt-1.5 px-2 text-xs text-muted-foreground">{STATUS_LABEL[q.status]}</p>
+          ) : null}
+        </li>
+      ))}
     </ul>
   );
 }

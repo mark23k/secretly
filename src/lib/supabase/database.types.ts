@@ -1,11 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18";
-  };
   public: {
     Tables: {
       activity: {
@@ -15,6 +10,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["activity_kind"];
           user_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: never;
@@ -47,6 +43,7 @@ export type Database = {
           started_at: string;
           user_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           active_seconds?: number;
           device_id: string;
@@ -75,6 +72,89 @@ export type Database = {
           },
         ];
       };
+      answer_votes: {
+        Row: {
+          answer_id: string;
+          created_at: string;
+          visitor_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answer_id: string;
+          created_at?: string;
+          visitor_id: string;
+        };
+        Update: {
+          answer_id?: string;
+          created_at?: string;
+          visitor_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "answer_votes_answer_id_fkey";
+            columns: ["answer_id"];
+            isOneToOne: false;
+            referencedRelation: "answers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "answer_votes_visitor_id_fkey";
+            columns: ["visitor_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      answers: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          helpful_count: number;
+          id: string;
+          question_id: string;
+          report_count: number;
+          status: Database["public"]["Enums"]["content_status"];
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          helpful_count?: number;
+          id?: string;
+          question_id: string;
+          report_count?: number;
+          status?: Database["public"]["Enums"]["content_status"];
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          helpful_count?: number;
+          id?: string;
+          question_id?: string;
+          report_count?: number;
+          status?: Database["public"]["Enums"]["content_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "answers_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       moderation_events: {
         Row: {
           actor: string;
@@ -86,6 +166,7 @@ export type Database = {
           target_kind: Database["public"]["Enums"]["content_kind"];
           visitor_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           actor: string;
           created_at?: string;
@@ -116,12 +197,71 @@ export type Database = {
           },
         ];
       };
+      questions: {
+        Row: {
+          answer_count: number;
+          author_id: string;
+          body: string;
+          category: Database["public"]["Enums"]["question_category"];
+          created_at: string;
+          helped_answer_id: string | null;
+          id: string;
+          report_count: number;
+          search: unknown;
+          status: Database["public"]["Enums"]["content_status"];
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answer_count?: number;
+          author_id: string;
+          body?: string;
+          category?: Database["public"]["Enums"]["question_category"];
+          created_at?: string;
+          helped_answer_id?: string | null;
+          id?: string;
+          report_count?: number;
+          search?: never;
+          status?: Database["public"]["Enums"]["content_status"];
+          title: string;
+        };
+        Update: {
+          answer_count?: number;
+          author_id?: string;
+          body?: string;
+          category?: Database["public"]["Enums"]["question_category"];
+          created_at?: string;
+          helped_answer_id?: string | null;
+          id?: string;
+          report_count?: number;
+          search?: never;
+          status?: Database["public"]["Enums"]["content_status"];
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "questions_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questions_helped_answer_fkey";
+            columns: ["helped_answer_id"];
+            isOneToOne: false;
+            referencedRelation: "answers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rate_limits: {
         Row: {
           hits: number;
           key: string;
           window_start: string;
         };
+        ComputedFields: never;
         Insert: {
           hits?: number;
           key: string;
@@ -145,6 +285,7 @@ export type Database = {
           target_id: string;
           target_kind: Database["public"]["Enums"]["content_kind"];
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           details?: string | null;
@@ -175,6 +316,154 @@ export type Database = {
           },
         ];
       };
+      secret_deliveries: {
+        Row: {
+          created_at: string;
+          given_secret_id: string | null;
+          id: string;
+          recipient_id: string;
+          secret_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          given_secret_id?: string | null;
+          id?: string;
+          recipient_id: string;
+          secret_id: string;
+        };
+        Update: {
+          created_at?: string;
+          given_secret_id?: string | null;
+          id?: string;
+          recipient_id?: string;
+          secret_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "secret_deliveries_given_secret_id_fkey";
+            columns: ["given_secret_id"];
+            isOneToOne: true;
+            referencedRelation: "secrets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "secret_deliveries_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "secret_deliveries_secret_id_fkey";
+            columns: ["secret_id"];
+            isOneToOne: false;
+            referencedRelation: "secrets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      secret_replies: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          delivery_id: string;
+          id: string;
+          read_at: string | null;
+          report_count: number;
+          secret_id: string;
+          status: Database["public"]["Enums"]["content_status"];
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          delivery_id: string;
+          id?: string;
+          read_at?: string | null;
+          report_count?: number;
+          secret_id: string;
+          status?: Database["public"]["Enums"]["content_status"];
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          delivery_id?: string;
+          id?: string;
+          read_at?: string | null;
+          report_count?: number;
+          secret_id?: string;
+          status?: Database["public"]["Enums"]["content_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "secret_replies_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "secret_replies_delivery_id_fkey";
+            columns: ["delivery_id"];
+            isOneToOne: true;
+            referencedRelation: "secret_deliveries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "secret_replies_secret_id_fkey";
+            columns: ["secret_id"];
+            isOneToOne: false;
+            referencedRelation: "secrets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      secrets: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          id: string;
+          local_day: string;
+          report_count: number;
+          status: Database["public"]["Enums"]["content_status"];
+          times_delivered: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          id?: string;
+          local_day: string;
+          report_count?: number;
+          status?: Database["public"]["Enums"]["content_status"];
+          times_delivered?: number;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          local_day?: string;
+          report_count?: number;
+          status?: Database["public"]["Enums"]["content_status"];
+          times_delivered?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "secrets_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       thought_comments: {
         Row: {
           author_id: string;
@@ -185,6 +474,7 @@ export type Database = {
           status: Database["public"]["Enums"]["content_status"];
           thought_id: string;
         };
+        ComputedFields: never;
         Insert: {
           author_id: string;
           body: string;
@@ -227,6 +517,7 @@ export type Database = {
           thought_id: string;
           visitor_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           reaction: string;
@@ -262,6 +553,7 @@ export type Database = {
           not_me: number;
           thought_id: string;
         };
+        ComputedFields: never;
         Insert: {
           me_too?: number;
           not_me?: number;
@@ -289,6 +581,7 @@ export type Database = {
           thought_id: string;
           visitor_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           me_too: boolean;
@@ -326,11 +619,12 @@ export type Database = {
           comment_count: number;
           created_at: string;
           id: string;
-          reaction_counts: Json;
+          reaction_counts: NonNullable<Json>;
           reaction_total: number;
           report_count: number;
           status: Database["public"]["Enums"]["content_status"];
         };
+        ComputedFields: never;
         Insert: {
           author_id: string;
           body: string;
@@ -338,7 +632,7 @@ export type Database = {
           comment_count?: number;
           created_at?: string;
           id?: string;
-          reaction_counts?: Json;
+          reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
           status?: Database["public"]["Enums"]["content_status"];
@@ -350,7 +644,7 @@ export type Database = {
           comment_count?: number;
           created_at?: string;
           id?: string;
-          reaction_counts?: Json;
+          reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
           status?: Database["public"]["Enums"]["content_status"];
@@ -375,6 +669,7 @@ export type Database = {
           ip_hash: string | null;
           time_zone: string;
         };
+        ComputedFields: never;
         Insert: {
           ban_reason?: string | null;
           banned?: boolean;
@@ -404,7 +699,7 @@ export type Database = {
         Args: { p_kind: Database["public"]["Enums"]["activity_kind"] };
         Returns: string;
       };
-      admin_live_stats: { Args: never; Returns: Json };
+      admin_live_stats: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_stats: { Args: { p_days: number; p_tz: string }; Returns: Json };
       cast_thought_vote: {
         Args: { p_me_too: boolean; p_thought: string; p_visitor: string };
@@ -416,12 +711,45 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      check_secret_reply: { Args: { p_delivery: string; p_visitor: string }; Returns: string };
       content_table: {
         Args: { p_kind: Database["public"]["Enums"]["content_kind"] };
         Returns: string;
       };
+      deliver_secret: { Args: { p_given: string; p_visitor: string }; Returns: string };
+      exchange_secret: {
+        Args: {
+          p_body: string;
+          p_daily_limit: number;
+          p_status: Database["public"]["Enums"]["content_status"];
+          p_visitor: string;
+        };
+        Returns: Json;
+      };
+      get_answers: {
+        Args: { p_question: string };
+        Returns: Database["public"]["CompositeTypes"]["answer_view"][];
+        SetofOptions: {
+          from: "*";
+          to: "answer_view";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_exchange_state: { Args: { p_daily_limit: number; p_visitor: string }; Returns: Json };
+      get_my_questions: {
+        Args: Record<PropertyKey, never>;
+        Returns: Database["public"]["CompositeTypes"]["question_view"][];
+        SetofOptions: {
+          from: "*";
+          to: "question_view";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_my_secrets: { Args: { p_visitor: string }; Returns: Json };
       get_my_thoughts: {
-        Args: never;
+        Args: Record<PropertyKey, never>;
         Returns: Database["public"]["CompositeTypes"]["thought_view"][];
         SetofOptions: {
           from: "*";
@@ -444,6 +772,33 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      get_question: {
+        Args: { p_id: string };
+        Returns: Database["public"]["CompositeTypes"]["question_view"][];
+        SetofOptions: {
+          from: "*";
+          to: "question_view";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_question_feed: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["question_category"];
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_sort?: string;
+        };
+        Returns: Database["public"]["CompositeTypes"]["question_view"][];
+        SetofOptions: {
+          from: "*";
+          to: "question_view";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_received_secrets: { Args: { p_visitor: string }; Returns: Json };
       get_thought: {
         Args: { p_id: string };
         Returns: Database["public"]["CompositeTypes"]["thought_view"][];
@@ -473,6 +828,17 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number };
         Returns: boolean;
       };
+      loose_tsquery: { Args: { p_text: string }; Returns: unknown };
+      question_relevance: {
+        Args: {
+          p_text: string;
+          q: Omit<
+            Database["public"]["Tables"]["questions"]["Row"],
+            Database["public"]["Tables"]["questions"]["ComputedFields"]
+          >;
+        };
+        Returns: number;
+      };
       register_report: {
         Args: {
           p_id: string;
@@ -481,10 +847,40 @@ export type Database = {
         };
         Returns: number;
       };
+      search_similar_questions: {
+        Args: { p_limit?: number; p_text: string };
+        Returns: {
+          answer_count: number;
+          helped: boolean;
+          id: string;
+          score: number;
+          title: string;
+        }[];
+      };
+      settle_owed_secrets: { Args: { p_visitor: string }; Returns: undefined };
+      to_question_view: {
+        Args: {
+          p_viewer: string;
+          q: Omit<
+            Database["public"]["Tables"]["questions"]["Row"],
+            Database["public"]["Tables"]["questions"]["ComputedFields"]
+          >;
+        };
+        Returns: Database["public"]["CompositeTypes"]["question_view"];
+        SetofOptions: {
+          from: "*";
+          to: "question_view";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       to_thought_view: {
         Args: {
           p_viewer: string;
-          t: Database["public"]["Tables"]["thoughts"]["Row"];
+          t: Omit<
+            Database["public"]["Tables"]["thoughts"]["Row"],
+            Database["public"]["Tables"]["thoughts"]["ComputedFields"]
+          >;
         };
         Returns: Database["public"]["CompositeTypes"]["thought_view"];
         SetofOptions: {
@@ -495,18 +891,10 @@ export type Database = {
         };
       };
       track_visit: {
-        Args: {
-          p_device: string;
-          p_event: string;
-          p_session: string;
-          p_user: string;
-        };
+        Args: { p_device: string; p_event: string; p_session: string; p_user: string };
         Returns: undefined;
       };
-      wilson_lower_bound: {
-        Args: { p_pos: number; p_total: number };
-        Returns: number;
-      };
+      wilson_lower_bound: { Args: { p_pos: number; p_total: number }; Returns: number };
     };
     Enums: {
       activity_kind:
@@ -527,6 +915,16 @@ export type Database = {
         | "secret"
         | "secret_reply";
       content_status: "pending" | "published" | "hidden" | "removed";
+      question_category:
+        | "relationships"
+        | "money"
+        | "body"
+        | "social"
+        | "behavior"
+        | "religion"
+        | "work"
+        | "family"
+        | "other";
       thought_category:
         | "relationships"
         | "work"
@@ -537,6 +935,26 @@ export type Database = {
         | "other";
     };
     CompositeTypes: {
+      answer_view: {
+        id: string | null;
+        body: string | null;
+        created_at: string | null;
+        helpful_count: number | null;
+        voted: boolean | null;
+        is_mine: boolean | null;
+        helped_asker: boolean | null;
+      };
+      question_view: {
+        id: string | null;
+        title: string | null;
+        body: string | null;
+        category: Database["public"]["Enums"]["question_category"] | null;
+        status: Database["public"]["Enums"]["content_status"] | null;
+        created_at: string | null;
+        answer_count: number | null;
+        helped_answer_id: string | null;
+        is_mine: boolean | null;
+      };
       thought_view: {
         id: string | null;
         body: string | null;
@@ -569,9 +987,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R;
@@ -595,9 +1011,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I;
     }
@@ -620,9 +1034,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U;
     }
@@ -645,9 +1057,7 @@ export type Enums<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -662,9 +1072,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
@@ -686,6 +1094,17 @@ export const Constants = {
       ],
       content_kind: ["thought", "thought_comment", "question", "answer", "secret", "secret_reply"],
       content_status: ["pending", "published", "hidden", "removed"],
+      question_category: [
+        "relationships",
+        "money",
+        "body",
+        "social",
+        "behavior",
+        "religion",
+        "work",
+        "family",
+        "other",
+      ],
       thought_category: ["relationships", "work", "social", "habits", "feelings", "body", "other"],
     },
   },
