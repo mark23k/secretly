@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { AuthError } from "@supabase/supabase-js";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -59,6 +59,7 @@ export function AuthForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ids = { email: useId(), password: useId(), error: useId() };
+  const captchaRef = useRef<HTMLDivElement>(null);
   const Heading = headingLevel;
 
   function switchMode(m: AuthMode) {
@@ -77,7 +78,7 @@ export function AuthForm({
     setPending(true);
     try {
       const supabase = createClient();
-      const captchaToken = turnstileSiteKey ? await getTurnstileToken(turnstileSiteKey) : undefined;
+      const captchaToken = turnstileSiteKey ? await getTurnstileToken(turnstileSiteKey, captchaRef.current) : undefined;
 
       if (mode === "sign-in") {
         const { error } = await supabase.auth.signInWithPassword({
@@ -197,6 +198,9 @@ export function AuthForm({
           {error}
         </p>
       )}
+
+      {/* Turnstile shows here only if Cloudflare asks for a click. */}
+      <div ref={captchaRef} className="flex justify-center empty:hidden" />
 
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? copy.busy : copy.submit}

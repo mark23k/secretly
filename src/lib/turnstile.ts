@@ -28,19 +28,31 @@ function loadScript(): Promise<void> {
   return scriptPromise;
 }
 
-export async function getTurnstileToken(siteKey: string): Promise<string> {
+/**
+ * Resolves a Turnstile token. Usually invisible; when Cloudflare wants a
+ * click, the widget appears inside `mount` (so it works inside dialogs).
+ */
+export async function getTurnstileToken(siteKey: string, mount?: HTMLElement | null): Promise<string> {
   await loadScript();
   const api = window.turnstile;
   if (!api) throw new Error("Bot check unavailable.");
 
   const host = document.createElement("div");
-  host.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:60";
-  document.body.appendChild(host);
+  if (mount) {
+    mount.replaceChildren(host);
+  } else {
+    host.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:60";
+    document.body.appendChild(host);
+  }
 
   return new Promise((resolve, reject) => {
     const cleanup = (id: string) => {
       api.remove(id);
       host.remove();
+    };
+    const fail = (id: string, message: string) => {
+      cleanup(id);
+      reject(new Error(message));
     };
     const id = api.render(host, {
       sitekey: siteKey,
@@ -49,10 +61,9 @@ export async function getTurnstileToken(siteKey: string): Promise<string> {
         cleanup(id);
         resolve(token);
       },
-      "error-callback": () => {
-        cleanup(id);
-        reject(new Error("The bot check failed. Please try again."));
-      },
+      "error-callback": () => fail(id, "The bot check failed. Please try again."),
+      "expired-callback": () => fail(id, "The bot check expired. Please try again."),
+      "timeout-callback": () => fail(id, "The bot check timed out. Please try again."),
     });
   });
 }
