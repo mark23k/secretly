@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Secretly
 
-## Getting Started
+A calm, anonymous space to share the thoughts, questions and secrets you'd never say out loud.
 
-First, run the development server:
+- **Am I the only one?**: post a thought, see how many people relate.
+- **The question you can't ask**: anonymous Q&A with similar-question detection.
+- **The secret exchange**: give a secret, get a stranger's secret back (3 per day).
+
+Built with Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui and Supabase.
+
+## Local setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then fill in the values (see below)
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a project at [supabase.com](https://supabase.com/dashboard).
+2. **Email + password sign-in, no emails sent**: Authentication → Sign In / Providers → Email. Keep the
+   Email provider enabled and turn **Confirm email** OFF. Accounts are then signed in straight after
+   sign-up, and Secretly never sends any email (there's no email verification or password reset).
+3. **Copy keys** from Project Settings → API into `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: `anon` / publishable key
+   - `SUPABASE_SERVICE_ROLE_KEY`: `service_role` / secret key (**server only, never commit**)
+4. **Apply the database migrations** (in `supabase/migrations`):
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push
+   ```
+5. Set `APP_SECRET` (any long random string, e.g. `openssl rand -base64 32`) and `ADMIN_EMAILS`
+   (your account's email). Sign up on the site with that email, then open **/admin** for the manager dashboard.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Accounts and anonymity
 
-## Learn More
+Anyone can read. Posting, replying, voting and reporting need an email + password account, which also
+tracks the 3-secrets-a-day limit. Emails aren't verified, so turning on Turnstile (below) is recommended
+to keep bots from mass-creating accounts. Accounts are never shown publicly: every post is anonymous, and the
+manager dashboard only shows totals.
 
-To learn more about Next.js, take a look at the following resources:
+The dashboard's visitor numbers come from a first-party heartbeat (`/api/track`): a random browser id in
+localStorage, no cookies and no third-party scripts.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Optional
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Bot protection** (recommended): create a Cloudflare Turnstile widget, set `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and add the secret key under Supabase → Authentication → Attack Protection → CAPTCHA.
+- **AI moderation**: set `OPENAI_API_KEY` to add OpenAI's free moderation endpoint on top of the built-in filters.
 
-## Deploy on Vercel
+## Deploying to Netlify
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push the repo to GitHub, then in Netlify choose **Add new site → Import an existing project** and pick it.
+   Netlify detects Next.js and uses its Next.js runtime automatically; `netlify.toml` sets the build command.
+2. Under **Site configuration → Environment variables**, add everything from `.env.example`.
+   `NEXT_PUBLIC_SITE_URL` is optional on Netlify (it falls back to Netlify's `URL`); set it if you use a
+   custom domain. Keep `SUPABASE_SERVICE_ROLE_KEY` scoped to **Functions** / builds only.
+3. Deploy. After the first deploy, check sign-up, voting and `/admin` on the live site.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Netlify's Next.js support is Netlify's own integration (not yet a Next.js-verified adapter), so test new
+Next.js upgrades on a deploy preview first.
+
+## Project structure
+
+```
+src/
+  app/                 routes (App Router)
+  components/
+    brand/             wordmark
+    layout/            header, footer, nav, theme
+    shared/            reusable page pieces
+    ui/                shadcn/ui primitives
+  config/              site config, crisis resources
+  lib/
+    supabase/          browser / server / service-role clients
+  proxy.ts             refreshes signed-in Supabase sessions
+supabase/migrations/   SQL schema + RLS policies
+```

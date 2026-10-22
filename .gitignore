@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+!.env.example
+
+# example env (no secrets) is committed
+!.env.example
+
+# supabase cli local state
+supabase/.temp
