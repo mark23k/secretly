@@ -7,6 +7,7 @@ import { QuestionCard } from "@/components/questions/question-card";
 import { QuestionFeedSkeleton } from "@/components/questions/question-feed";
 import { getSessionUser } from "@/lib/server/visitor";
 import { SignInPrompt } from "@/components/auth/sign-in-prompt";
+import { DeleteAccount } from "@/components/auth/delete-account";
 import { thoughtCategoryLabel } from "@/config/thoughts";
 import { timeAgo } from "@/lib/time";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export default function MyPostsPage() {
             <Link href="/exchange/inbox">Open my secrets</Link>
           </Button>
         </section>
+        <DeleteAccount />
       </div>
     </div>
   );

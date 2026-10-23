@@ -692,15 +692,49 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      moderation_content: {
+        Row: {
+          author_id: string | null;
+          context: string | null;
+          created_at: string | null;
+          id: string | null;
+          kind: Database["public"]["Enums"]["content_kind"] | null;
+          report_count: number | null;
+          status: Database["public"]["Enums"]["content_status"] | null;
+          text: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
     };
     Functions: {
       activity_group: {
         Args: { p_kind: Database["public"]["Enums"]["activity_kind"] };
         Returns: string;
       };
+      admin_ban_author: {
+        Args: {
+          p_admin: string;
+          p_id: string;
+          p_kind: Database["public"]["Enums"]["content_kind"];
+          p_reason: string;
+        };
+        Returns: undefined;
+      };
       admin_live_stats: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_moderate: {
+        Args: {
+          p_action: string;
+          p_admin: string;
+          p_id: string;
+          p_kind: Database["public"]["Enums"]["content_kind"];
+        };
+        Returns: undefined;
+      };
+      admin_moderation_queue: { Args: { p_limit?: number }; Returns: Json };
       admin_stats: { Args: { p_days: number; p_tz: string }; Returns: Json };
+      admin_unban: { Args: { p_visitor: string }; Returns: undefined };
+      author_code: { Args: { p_id: string }; Returns: string };
       cast_thought_vote: {
         Args: { p_me_too: boolean; p_thought: string; p_visitor: string };
         Returns: Database["public"]["CompositeTypes"]["thought_view"];

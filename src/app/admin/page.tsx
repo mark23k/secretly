@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { BarList } from "@/components/admin/bar-list";
 import { ChartCard } from "@/components/admin/chart-card";
 import { ColumnChart, type Column } from "@/components/admin/column-chart";
@@ -54,6 +55,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
 
   return (
     <div className="space-y-8">
+      <AdminNav current="dashboard" />
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-primary uppercase">Only visible to managers</p>

@@ -5,6 +5,10 @@ export const siteConfig = {
     "A calm, anonymous space to share the thoughts, questions and secrets you'd never say out loud. No names. No profiles. Just people.",
   // Netlify sets URL to the site's main address.
   url: process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || "http://localhost:3000",
+  /** Shown on the Privacy, Terms and Guidelines pages. Leave empty to hide. */
+  contactEmail: "",
+  /** Date shown on the legal pages; update it when you change them. */
+  legalUpdated: "October 23, 2026",
 } as const;
 
 export type FeatureKey = "only-one" | "ask" | "exchange";
