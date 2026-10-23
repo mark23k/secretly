@@ -11,7 +11,7 @@ export const siteConfig = {
   legalUpdated: "October 23, 2026",
 } as const;
 
-export type FeatureKey = "only-one" | "ask" | "exchange";
+export type FeatureKey = "only-one" | "ask" | "exchange" | "after-dark";
 
 export const features: Record<
   FeatureKey,
@@ -21,25 +21,30 @@ export const features: Record<
     href: "/only-one",
     navLabel: "Only one?",
     title: "Am I the only one?",
-    pitch:
-      "Share a thought you've never admitted. See how many strangers quietly feel the same.",
-    cta: "Find out",
+    pitch: "Confess the thing you've never admitted. Then see how many strangers secretly do it too.",
+    cta: "Confess something",
   },
   ask: {
     href: "/ask",
     navLabel: "Ask",
     title: "The question you can't ask",
     pitch:
-      "Ask what you're too embarrassed to ask anyone. Get honest answers from people who've been there.",
-    cta: "Ask anonymously",
+      "The awkward one. The embarrassing one. Ask it here and get honest answers from people who've been there.",
+    cta: "Ask the awkward one",
   },
   exchange: {
     href: "/exchange",
     navLabel: "Exchange",
     title: "The secret exchange",
-    pitch:
-      "Give a secret, get a stranger's secret back. Three a day. Nobody will ever know it was you.",
-    cta: "Trade a secret",
+    pitch: "Give a secret, get a stranger's secret back. Three a day. Make them count.",
+    cta: "Peek at a stranger's secret",
+  },
+  "after-dark": {
+    href: "/after-dark",
+    navLabel: "After Dark",
+    title: "After Dark",
+    pitch: "The questions people only ask at 2am. Dating, sex and relationships. 18+.",
+    cta: "Step inside",
   },
 };
 

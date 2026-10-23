@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AnonymityNote } from "@/components/shared/anonymity-note";
 import { CharCounter } from "@/components/shared/char-counter";
 import { ReportButton } from "@/components/shared/report-button";
+import { AfterDarkVeil } from "@/components/after-dark/after-dark-veil";
 
 /** Best first: the asker's pick, then most helpful, then oldest. */
 function rank(answers: Answer[]) {
@@ -37,6 +38,10 @@ export function QuestionDetail({
 }) {
   const [answers, setAnswers] = useState(initial);
   const published = question.status === "published";
+  const content = renderContent();
+  return question.category === "after_dark" ? <AfterDarkVeil>{content}</AfterDarkVeil> : content;
+
+  function renderContent() {
 
   function update(id: string, patch: Partial<Answer>) {
     setAnswers((cur) => cur.map((a) => (a.id === id ? { ...a, ...patch } : a)));
@@ -113,6 +118,7 @@ export function QuestionDetail({
       ) : null}
     </div>
   );
+  }
 }
 
 function AnswerItem({

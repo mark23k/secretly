@@ -12,6 +12,7 @@ export const questionCategories: { value: QuestionCategory; label: string }[] = 
   { value: "work", label: "Work & school" },
   { value: "religion", label: "Faith & beliefs" },
   { value: "other", label: "Other" },
+  { value: "after_dark", label: "After Dark" },
 ];
 
 export const questionCategoryLabel = Object.fromEntries(

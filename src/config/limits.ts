@@ -34,6 +34,7 @@ export const rateLimits = {
   replySecret: { limit: 10, windowSeconds: 3600 },
   report: { limit: 20, windowSeconds: 3600 },
   trackVisit: { limit: 300, windowSeconds: 3600 },
+  peekThought: { limit: 300, windowSeconds: 3600 },
 } as const satisfies Record<string, { limit: number; windowSeconds: number }>;
 
 export type RateLimitName = keyof typeof rateLimits;

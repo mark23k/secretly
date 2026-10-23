@@ -10,6 +10,7 @@ export const thoughtCategories: { value: ThoughtCategory; label: string }[] = [
   { value: "feelings", label: "Feelings" },
   { value: "body", label: "Body" },
   { value: "other", label: "Other" },
+  { value: "after_dark", label: "After Dark" },
 ];
 
 export const thoughtCategoryLabel = Object.fromEntries(

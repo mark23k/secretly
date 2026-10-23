@@ -13,12 +13,12 @@ import { CharCounter } from "@/components/shared/char-counter";
 import { cn } from "@/lib/utils";
 import { SimilarQuestions } from "./similar-questions";
 
-export function QuestionComposer() {
+export function QuestionComposer({ initialCategory = null }: { initialCategory?: QuestionCategory | null }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [showDetails, setShowDetails] = useState(false);
-  const [category, setCategory] = useState<QuestionCategory | null>(null);
+  const [category, setCategory] = useState<QuestionCategory | null>(initialCategory);
   const [error, setError] = useState<string | null>(null);
   const { execute, pending } = useAction(createQuestion, {
     toastErrors: false,

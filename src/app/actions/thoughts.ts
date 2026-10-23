@@ -5,9 +5,13 @@ import { textLimits } from "@/config/limits";
 import { reactionKeys, thoughtCategories } from "@/config/thoughts";
 import { createAction } from "@/lib/server/action";
 import { logModeration, screenContent } from "@/lib/server/content";
-import { ActionError, ok } from "@/lib/server/errors";
+import { ActionError, ok, type ActionResult } from "@/lib/server/errors";
+import { getIpHash } from "@/lib/server/ip";
+import { enforceRateLimit } from "@/lib/server/rate-limit";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { textField } from "@/lib/text";
-import { toThought, type ThoughtComment } from "@/lib/data/thoughts";
+import { toThought, type Thought, type ThoughtComment } from "@/lib/data/thoughts";
 import type { AdminClient } from "@/lib/supabase/admin";
 
 const categoryValues = thoughtCategories.map((c) => c.value) as [
@@ -111,3 +115,23 @@ export const addThoughtComment = createAction({
     return ok({ comment, published: screened.status === "published" }, screened.held);
   },
 });
+
+/**
+ * For signed-out visitors: see a thought's result after choosing, without an
+ * account. Nothing is recorded (their vote counts once they sign up).
+ */
+export async function peekThought(input: { thoughtId: string }): Promise<ActionResult<Thought>> {
+  try {
+    if (!isSupabaseConfigured) throw new ActionError("unavailable", "Secretly isn't connected to its database yet.");
+    const thoughtId = z.uuid().parse(input.thoughtId);
+    await enforceRateLimit("peekThought", { ipHash: await getIpHash() });
+    const { data, error } = await createAdminClient().rpc("peek_thought", { p_id: thoughtId });
+    if (error) throw error;
+    if (!data?.id) throw new ActionError("not_found", "This thought is no longer available.");
+    return ok(toThought(data));
+  } catch (error) {
+    if (error instanceof ActionError) return { ok: false, code: error.code, message: error.message };
+    console.error("[peekThought]", error);
+    return { ok: false, code: "server", message: "Something went wrong. Please try again." };
+  }
+}

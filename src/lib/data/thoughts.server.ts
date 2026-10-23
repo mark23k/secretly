@@ -74,3 +74,12 @@ export async function getMyThoughts(): Promise<Thought[]> {
   if (error) throw error;
   return data.map(toThought);
 }
+
+/** The hand-picked thoughts that open the home page deck. */
+export async function getFeaturedThoughts(): Promise<Thought[]> {
+  const supabase = await db();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("get_featured_thoughts", { p_limit: 12 });
+  if (error) throw error;
+  return data.map(toThought);
+}

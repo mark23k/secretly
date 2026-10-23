@@ -3,15 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { ArrowRight, Flame, Plus, SkipForward } from "lucide-react";
+import { ArrowRight, Flame, Plus, SkipForward, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toThought, type Thought } from "@/lib/data/thoughts";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useAuth } from "@/components/providers/auth-provider";
 import { ThoughtCard } from "./thought-card";
 
 const SWIPE_DISTANCE = 110;
 const SWIPE_VELOCITY = 550;
+/** Guests see results right away; after this many we invite them to sign up. */
+const GUEST_NUDGE_AFTER = 3;
 
 /**
  * Card mode: a deck of thoughts. Vote by tapping, swiping (right = me too,
@@ -19,6 +22,7 @@ const SWIPE_VELOCITY = 550;
  * Prefetches more unseen thoughts as the queue runs low.
  */
 export function ThoughtDeck({ initial }: { initial: Thought[] }) {
+  const { user, openAuth } = useAuth();
   const [queue, setQueue] = useState(initial);
   const [index, setIndex] = useState(0);
   const [voted, setVoted] = useState(false);
@@ -163,6 +167,22 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
           </Button>
         )}
       </div>
+      {user === null && votedCount >= GUEST_NUDGE_AFTER ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-3 rounded-3xl bg-accent/60 px-5 py-5 text-center text-accent-foreground sm:flex-row sm:text-left"
+        >
+          <Sparkles className="size-6 shrink-0" aria-hidden />
+          <p className="flex-1 text-sm">
+            <span className="font-semibold">Nice, that&apos;s {votedCount}.</span> Create a free account so your
+            votes count, and unlock the secret exchange. Takes 10 seconds, stays anonymous.
+          </p>
+          <Button size="sm" className="rounded-full" onClick={() => openAuth("sign-up")}>
+            Make them count
+          </Button>
+        </motion.div>
+      ) : null}
       <p className="text-center text-xs text-muted-foreground sm:hidden">
         Swipe right for <span className="font-medium text-foreground">me too</span>, left for{" "}
         <span className="font-medium text-foreground">not me</span>

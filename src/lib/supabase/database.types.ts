@@ -621,6 +621,7 @@ export type Database = {
           category: Database["public"]["Enums"]["thought_category"];
           comment_count: number;
           created_at: string;
+          featured_rank: number | null;
           id: string;
           reaction_counts: NonNullable<Json>;
           reaction_total: number;
@@ -635,6 +636,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["thought_category"];
           comment_count?: number;
           created_at?: string;
+          featured_rank?: number | null;
           id?: string;
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
@@ -648,6 +650,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["thought_category"];
           comment_count?: number;
           created_at?: string;
+          featured_rank?: number | null;
           id?: string;
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
@@ -777,6 +780,16 @@ export type Database = {
         };
       };
       get_exchange_state: { Args: { p_daily_limit: number; p_visitor: string }; Returns: Json };
+      get_featured_thoughts: {
+        Args: { p_limit?: number };
+        Returns: Database["public"]["CompositeTypes"]["thought_view"][];
+        SetofOptions: {
+          from: "*";
+          to: "thought_view";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       get_my_questions: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["CompositeTypes"]["question_view"][];
@@ -869,6 +882,16 @@ export type Database = {
         Returns: boolean;
       };
       loose_tsquery: { Args: { p_text: string }; Returns: unknown };
+      peek_thought: {
+        Args: { p_id: string };
+        Returns: Database["public"]["CompositeTypes"]["thought_view"];
+        SetofOptions: {
+          from: "*";
+          to: "thought_view";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       question_relevance: {
         Args: {
           p_text: string;
@@ -964,7 +987,8 @@ export type Database = {
         | "religion"
         | "work"
         | "family"
-        | "other";
+        | "other"
+        | "after_dark";
       thought_category:
         | "relationships"
         | "work"
@@ -972,7 +996,8 @@ export type Database = {
         | "habits"
         | "feelings"
         | "body"
-        | "other";
+        | "other"
+        | "after_dark";
     };
     CompositeTypes: {
       answer_view: {
@@ -1144,8 +1169,18 @@ export const Constants = {
         "work",
         "family",
         "other",
+        "after_dark",
       ],
-      thought_category: ["relationships", "work", "social", "habits", "feelings", "body", "other"],
+      thought_category: [
+        "relationships",
+        "work",
+        "social",
+        "habits",
+        "feelings",
+        "body",
+        "other",
+        "after_dark",
+      ],
     },
   },
 } as const;

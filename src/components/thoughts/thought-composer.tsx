@@ -18,10 +18,10 @@ const examples = [
   "I feel relieved when plans get cancelled, even ones I was looking forward to.",
 ];
 
-export function ThoughtComposer() {
+export function ThoughtComposer({ initialCategory = null }: { initialCategory?: ThoughtCategory | null }) {
   const router = useRouter();
   const [body, setBody] = useState("");
-  const [category, setCategory] = useState<ThoughtCategory | null>(null);
+  const [category, setCategory] = useState<ThoughtCategory | null>(initialCategory);
   const [error, setError] = useState<string | null>(null);
   const { execute, pending } = useAction(createThought, {
     toastErrors: false,

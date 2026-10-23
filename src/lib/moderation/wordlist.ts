@@ -6,7 +6,13 @@
  * Ambiguous content is left to community reports and the review queue.
  */
 
-export type WordFilterCategory = "slur" | "harassment" | "threat" | "sexual_minors" | "sexual_solicitation";
+export type WordFilterCategory =
+  | "slur"
+  | "harassment"
+  | "threat"
+  | "sexual_minors"
+  | "sexual_solicitation"
+  | "explicit";
 
 const rules: { category: WordFilterCategory; pattern: RegExp }[] = [
   {
@@ -35,6 +41,13 @@ const rules: { category: WordFilterCategory; pattern: RegExp }[] = [
   {
     category: "sexual_solicitation",
     pattern: /\b(?:send (?:me )?(?:nudes|pics|noods)|dick pics?|show me your (?:body|tits|boobs))\b/,
+  },
+  {
+    // Graphic sexual language. Frank questions about sex are welcome (After
+    // Dark), graphic descriptions aren't: these are held for a person to review.
+    category: "explicit",
+    pattern:
+      /\b(?:porn(?:hub|o|ography)?|nudes|cocks?|puss(?:y|ies)|cum(?:s|ming|shot)?|blow ?jobs?|hand ?jobs?|deep ?throat(?:ing)?|creampies?|gang ?bangs?|tits|titties|dildos?|jerk(?:ing)? off|jack(?:ing)? off|wank(?:ing)?)\b/,
   },
 ];
 

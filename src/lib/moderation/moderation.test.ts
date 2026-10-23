@@ -82,6 +82,12 @@ describe("moderate", () => {
     expect(r.action).toBe("publish");
   });
 
+  it("welcomes frank questions about sex but holds graphic language", async () => {
+    expect((await moderate("How do you know if you're actually good in bed?", "question")).action).toBe("publish");
+    expect((await moderate("Is it normal to have a lower sex drive than your partner?", "question")).action).toBe("publish");
+    expect((await moderate("I watch porn every night and feel weird about it", "thought")).action).toBe("review");
+  });
+
   it("does not trip on words containing slurs (Scunthorpe)", async () => {
     expect((await moderate("A raccoon raided our trash last night", "thought")).action).toBe("publish");
     expect((await moderate("My Spicy food obsession is getting out of hand", "thought")).action).toBe("publish");

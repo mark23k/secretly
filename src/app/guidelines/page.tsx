@@ -42,6 +42,14 @@ export default function GuidelinesPage() {
         </ul>
       </LegalSection>
 
+      <LegalSection title="After Dark">
+        <p>
+          After Dark is the 18+ corner for dating, sex and relationships. Frank, honest questions and confessions are
+          welcome there. Graphic descriptions, explicit sexual content and anything involving minors are not: they&apos;re
+          held for review or removed, and serious cases lead to a ban.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Replies to secrets">
         <p>
           When you receive a stranger&apos;s secret, you can send them one short message. It goes straight to a
