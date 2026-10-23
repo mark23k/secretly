@@ -1,5 +1,5 @@
 import type { Database } from "@/lib/supabase/database.types";
-import type { ReactionKey, ThoughtCategory } from "@/config/thoughts";
+import { DEFAULT_THOUGHT_OPTIONS, type ReactionKey, type ThoughtCategory } from "@/config/thoughts";
 
 type ThoughtViewRow = Database["public"]["CompositeTypes"]["thought_view"];
 
@@ -13,10 +13,12 @@ export type Thought = {
   reactionCounts: Partial<Record<ReactionKey, number>>;
   myReactions: ReactionKey[];
   isMine: boolean;
-  /** null = hasn't voted */
-  myVote: boolean | null;
-  /** null until the viewer has voted (or is the author) */
-  result: { meToo: number; notMe: number } | null;
+  /** The answers to choose from: the author's own, or "Me too" / "Not me". */
+  options: string[];
+  /** Index into options; null = hasn't voted. */
+  myChoice: number | null;
+  /** Votes per option; null until the viewer has voted (or is the author). */
+  result: number[] | null;
 };
 
 export type ThoughtComment = { id: string; body: string; createdAt: string };
@@ -33,7 +35,8 @@ export function toThought(row: ThoughtViewRow): Thought {
     reactionCounts: (row.reaction_counts ?? {}) as Thought["reactionCounts"],
     myReactions: (row.my_reactions ?? []) as ReactionKey[],
     isMine: row.is_mine ?? false,
-    myVote: row.my_vote,
-    result: row.me_too === null || row.not_me === null ? null : { meToo: row.me_too, notMe: row.not_me },
+    options: row.options ?? [...DEFAULT_THOUGHT_OPTIONS],
+    myChoice: row.my_choice,
+    result: row.counts ?? null,
   };
 }

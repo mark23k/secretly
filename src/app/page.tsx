@@ -4,7 +4,7 @@ import { ArrowRight, EyeOff, HeartHandshake, Moon, ShieldCheck } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { features, type FeatureKey } from "@/config/site";
 import { getQuestionFeed } from "@/lib/data/questions.server";
-import { getFeaturedThoughts, getNextThoughts, getThoughtFeed } from "@/lib/data/thoughts.server";
+import { getFeaturedThoughts, getHomeTeasers, getNextThoughts, getThoughtFeed } from "@/lib/data/thoughts.server";
 import { ThoughtDeck, ThoughtDeckSkeleton } from "@/components/thoughts/thought-deck";
 
 const order: FeatureKey[] = ["only-one", "ask", "exchange"];
@@ -89,21 +89,28 @@ function tease(text: string) {
 }
 
 async function Teasers() {
-  const [thoughts, questions, featured] = await Promise.all([
-    getThoughtFeed({ sort: "relatable" }),
-    getQuestionFeed({ sort: "top" }),
-    getFeaturedThoughts(),
-  ]);
-  // The featured ones are already in the deck above.
-  const inDeck = new Set(featured.map((t) => t.id));
-  const items = [
-    ...thoughts
-      .filter((t) => !inDeck.has(t.id))
-      .slice(0, 3).map((t) => ({ id: t.id, kind: "Someone confessed", text: t.body, href: `/only-one/${t.id}` })),
-    ...questions.slice(0, 2).map((q) => ({ id: q.id, kind: "Someone asked", text: q.title, href: `/ask/${q.id}` })),
-  ];
-  // Interleave so confessions and questions alternate.
-  const mixed = [items[0], items[3], items[1], items[4], items[2]].filter(Boolean);
+  const curated = await getHomeTeasers();
+  let items = curated.map((t) => ({
+    id: t.id,
+    kind: t.kind === "question" ? "Someone asked" : "Someone confessed",
+    text: t.body,
+    href: t.kind === "question" ? `/ask/${t.id}` : `/only-one/${t.id}`,
+  }));
+  if (items.length === 0) {
+    // Nothing curated yet: fall back to the most relatable posts.
+    const [thoughts, questions] = await Promise.all([
+      getThoughtFeed({ sort: "relatable" }),
+      getQuestionFeed({ sort: "top" }),
+    ]);
+    items = [
+      ...thoughts.slice(0, 3).map((t) => ({ id: t.id, kind: "Someone confessed", text: t.body, href: `/only-one/${t.id}` })),
+      ...questions.slice(0, 2).map((q) => ({ id: q.id, kind: "Someone asked", text: q.title, href: `/ask/${q.id}` })),
+    ];
+  }
+  // Alternate confessions and questions.
+  const thoughtItems = items.filter((t) => t.kind === "Someone confessed");
+  const questionItems = items.filter((t) => t.kind === "Someone asked");
+  const mixed = thoughtItems.flatMap((t, i) => (questionItems[i] ? [t, questionItems[i]] : [t]));
 
   return (
     <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

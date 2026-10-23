@@ -29,7 +29,7 @@ export function ThoughtDetail({
     return () => clearInterval(id);
   }, [router, thought.isMine, thought.status]);
 
-  const resultKey = thought.result ? `${thought.result.meToo}-${thought.result.notMe}` : "none";
+  const resultKey = thought.result ? thought.result.join("-") : "none";
 
   return (
     <div className="space-y-10">

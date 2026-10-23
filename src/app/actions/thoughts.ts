@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { textLimits } from "@/config/limits";
-import { reactionKeys, thoughtCategories } from "@/config/thoughts";
+import { DEFAULT_THOUGHT_OPTIONS, reactionKeys, thoughtCategories, thoughtOptionLimits } from "@/config/thoughts";
 import { createAction } from "@/lib/server/action";
 import { logModeration, screenContent } from "@/lib/server/content";
 import { ActionError, ok, type ActionResult } from "@/lib/server/errors";
@@ -10,7 +10,7 @@ import { getIpHash } from "@/lib/server/ip";
 import { enforceRateLimit } from "@/lib/server/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { textField } from "@/lib/text";
+import { cleanText, textField } from "@/lib/text";
 import { toThought, type Thought, type ThoughtComment } from "@/lib/data/thoughts";
 import type { AdminClient } from "@/lib/supabase/admin";
 
@@ -31,17 +31,29 @@ async function requirePublishedThought(admin: AdminClient, id: string) {
   return data;
 }
 
+const { min: minOptions, max: maxOptions, maxLength: maxOptionLength } = thoughtOptionLimits;
+
+/** 2-4 distinct answers, or null for the defaults ("Me too" / "Not me"). */
+const optionsField = z
+  .array(z.string().transform(cleanText).pipe(z.string().min(1, "Answers can't be empty.").max(maxOptionLength, `Keep each answer under ${maxOptionLength} characters.`)))
+  .min(minOptions, `Give at least ${minOptions} answers.`)
+  .max(maxOptions, `You can have up to ${maxOptions} answers.`)
+  .refine((o) => new Set(o.map((x) => x.toLowerCase())).size === o.length, "Each answer needs to be different.")
+  .nullish()
+  .transform((o) => (!o || o.join("|") === DEFAULT_THOUGHT_OPTIONS.join("|") ? null : o));
+
 export const createThought = createAction({
   schema: z.object({
     body: textField(textLimits.thought, "Your thought"),
     category: z.enum(categoryValues).default("other"),
+    options: optionsField,
   }),
   rateLimit: "createThought",
-  handler: async ({ body, category }, { visitor, admin }) => {
-    const screened = await screenContent(body, "thought");
+  handler: async ({ body, category, options }, { visitor, admin }) => {
+    const screened = await screenContent(options ? `${body}\n${options.join("\n")}` : body, "thought");
     const { data, error } = await admin
       .from("thoughts")
-      .insert({ author_id: visitor.id, body, category, status: screened.status })
+      .insert({ author_id: visitor.id, body, category, options, status: screened.status })
       .select("id")
       .single();
     if (error) throw error;
@@ -51,17 +63,18 @@ export const createThought = createAction({
 });
 
 export const voteThought = createAction({
-  schema: z.object({ thoughtId: z.uuid(), meToo: z.boolean() }),
+  schema: z.object({ thoughtId: z.uuid(), choice: z.number().int().min(0).max(maxOptions - 1) }),
   rateLimit: "voteThought",
-  handler: async ({ thoughtId, meToo }, { visitor, admin }) => {
+  handler: async ({ thoughtId, choice }, { visitor, admin }) => {
     const { data, error } = await admin.rpc("cast_thought_vote", {
       p_thought: thoughtId,
       p_visitor: visitor.id,
-      p_me_too: meToo,
+      p_choice: choice,
     });
     if (error) {
       if (error.code === "P0002") throw new ActionError("not_found", "This thought is no longer available.");
       if (error.code === "42501") throw new ActionError("forbidden", "You can't vote on your own thought.");
+      if (error.code === "22023") throw new ActionError("invalid", "That answer isn't one of the options.");
       throw error;
     }
     return ok(toThought(data));

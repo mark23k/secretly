@@ -207,6 +207,7 @@ export type Database = {
           body: string;
           category: Database["public"]["Enums"]["question_category"];
           created_at: string;
+          featured_rank: number | null;
           helped_answer_id: string | null;
           id: string;
           report_count: number;
@@ -221,6 +222,7 @@ export type Database = {
           body?: string;
           category?: Database["public"]["Enums"]["question_category"];
           created_at?: string;
+          featured_rank?: number | null;
           helped_answer_id?: string | null;
           id?: string;
           report_count?: number;
@@ -234,6 +236,7 @@ export type Database = {
           body?: string;
           category?: Database["public"]["Enums"]["question_category"];
           created_at?: string;
+          featured_rank?: number | null;
           helped_answer_id?: string | null;
           id?: string;
           report_count?: number;
@@ -554,17 +557,23 @@ export type Database = {
         Row: {
           me_too: number;
           not_me: number;
+          opt3: number;
+          opt4: number;
           thought_id: string;
         };
         ComputedFields: never;
         Insert: {
           me_too?: number;
           not_me?: number;
+          opt3?: number;
+          opt4?: number;
           thought_id: string;
         };
         Update: {
           me_too?: number;
           not_me?: number;
+          opt3?: number;
+          opt4?: number;
           thought_id?: string;
         };
         Relationships: [
@@ -579,21 +588,21 @@ export type Database = {
       };
       thought_votes: {
         Row: {
+          choice: number;
           created_at: string;
-          me_too: boolean;
           thought_id: string;
           visitor_id: string;
         };
         ComputedFields: never;
         Insert: {
+          choice: number;
           created_at?: string;
-          me_too: boolean;
           thought_id: string;
           visitor_id: string;
         };
         Update: {
+          choice?: number;
           created_at?: string;
-          me_too?: boolean;
           thought_id?: string;
           visitor_id?: string;
         };
@@ -623,13 +632,15 @@ export type Database = {
           created_at: string;
           featured_rank: number | null;
           id: string;
+          options: string[] | null;
           reaction_counts: NonNullable<Json>;
           reaction_total: number;
           report_count: number;
           seed_reactions: NonNullable<Json>;
           status: Database["public"]["Enums"]["content_status"];
+          thought_options: string[] | null;
         };
-        ComputedFields: never;
+        ComputedFields: "thought_options";
         Insert: {
           author_id: string;
           body: string;
@@ -638,6 +649,7 @@ export type Database = {
           created_at?: string;
           featured_rank?: number | null;
           id?: string;
+          options?: string[] | null;
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
@@ -652,6 +664,7 @@ export type Database = {
           created_at?: string;
           featured_rank?: number | null;
           id?: string;
+          options?: string[] | null;
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
@@ -745,7 +758,7 @@ export type Database = {
       admin_unban: { Args: { p_visitor: string }; Returns: undefined };
       author_code: { Args: { p_id: string }; Returns: string };
       cast_thought_vote: {
-        Args: { p_me_too: boolean; p_thought: string; p_visitor: string };
+        Args: { p_choice: number; p_thought: string; p_visitor: string };
         Returns: Database["public"]["CompositeTypes"]["thought_view"];
         SetofOptions: {
           from: "*";
@@ -789,6 +802,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      get_home_teasers: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          body: string;
+          id: string;
+          kind: string;
+        }[];
       };
       get_my_questions: {
         Args: Record<PropertyKey, never>;
@@ -921,6 +942,15 @@ export type Database = {
         }[];
       };
       settle_owed_secrets: { Args: { p_visitor: string }; Returns: undefined };
+      thought_options: {
+        Args: {
+          t: Omit<
+            Database["public"]["Tables"]["thoughts"]["Row"],
+            Database["public"]["Tables"]["thoughts"]["ComputedFields"]
+          >;
+        };
+        Returns: string[];
+      };
       to_question_view: {
         Args: {
           p_viewer: string;
@@ -957,6 +987,7 @@ export type Database = {
         Args: { p_device: string; p_event: string; p_session: string; p_user: string };
         Returns: undefined;
       };
+      valid_thought_options: { Args: { p: string[] }; Returns: boolean };
       wilson_lower_bound: { Args: { p_pos: number; p_total: number }; Returns: number };
     };
     Enums: {
@@ -1030,9 +1061,9 @@ export type Database = {
         reaction_counts: Json | null;
         my_reactions: string[] | null;
         is_mine: boolean | null;
-        my_vote: boolean | null;
-        me_too: number | null;
-        not_me: number | null;
+        options: string[] | null;
+        my_choice: number | null;
+        counts: number[] | null;
       };
     };
   };

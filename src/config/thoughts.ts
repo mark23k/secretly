@@ -2,6 +2,10 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type ThoughtCategory = Database["public"]["Enums"]["thought_category"];
 
+/** The answers a thought gets unless its author writes their own (2 to 4). */
+export const DEFAULT_THOUGHT_OPTIONS = ["Me too", "Not me"] as const;
+export const thoughtOptionLimits = { min: 2, max: 4, maxLength: 40 } as const;
+
 export const thoughtCategories: { value: ThoughtCategory; label: string }[] = [
   { value: "relationships", label: "Relationships" },
   { value: "work", label: "Work & school" },

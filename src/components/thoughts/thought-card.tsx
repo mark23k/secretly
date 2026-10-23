@@ -35,7 +35,7 @@ export function ThoughtCard({
   variant: Variant;
   onVoted?: (t: Thought) => void;
   /** Lets the deck vote by swipe or keyboard. Set while the card can be voted on. */
-  voteRef?: React.RefObject<((meToo: boolean) => void) | null>;
+  voteRef?: React.RefObject<((choice: number) => void) | null>;
   className?: string;
 }) {
   const [thought, setThought] = useState(initial);
@@ -48,14 +48,14 @@ export function ThoughtCard({
   const revealed = thought.result !== null;
   const href = `/only-one/${thought.id}`;
 
-  async function vote(meToo: boolean) {
+  async function vote(choice: number) {
     // Signed out: show the result straight away; the vote counts once they sign up.
     if (user === null) {
       setPeeking(true);
       const res = await peekThought({ thoughtId: thought.id });
       setPeeking(false);
       if (res.ok) {
-        const peekedThought = { ...res.data, myVote: meToo };
+        const peekedThought = { ...res.data, myChoice: choice };
         setThought(peekedThought);
         setPeeked(true);
         onVoted?.(peekedThought);
@@ -64,7 +64,7 @@ export function ThoughtCard({
       }
       return;
     }
-    const res = await execute({ thoughtId: thought.id, meToo });
+    const res = await execute({ thoughtId: thought.id, choice });
     if (res.ok) {
       setThought(res.data);
       onVoted?.(res.data);
@@ -73,7 +73,7 @@ export function ThoughtCard({
 
   useEffect(() => {
     if (!voteRef) return;
-    const own = thought.result === null && !pending ? (meToo: boolean) => void vote(meToo) : null;
+    const own = thought.result === null && !pending ? (choice: number) => void vote(choice) : null;
     voteRef.current = own;
     return () => {
       // A card animating out unmounts after the next card took over: leave that one alone.
@@ -152,19 +152,27 @@ export function ThoughtCard({
               className="mt-6 space-y-3"
             >
               <p className="text-sm text-muted-foreground" id={`prompt-${thought.id}`}>
-                Do you relate? Vote to see how many people do.
+                {thought.options[0] === "Me too" && thought.options.length === 2
+                  ? "Do you relate? Vote to see how many people do."
+                  : "Pick your answer to see what everyone said."}
               </p>
               <div
                 role="group"
                 aria-labelledby={`prompt-${thought.id}`}
-                className="grid grid-cols-2 gap-2.5"
+                className={cn("grid gap-2.5", thought.options.length === 2 ? "grid-cols-2" : "grid-cols-1")}
               >
-                <Button size="lg" onClick={() => vote(true)} disabled={pending}>
-                  Me too
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => vote(false)} disabled={pending}>
-                  Not me
-                </Button>
+                {thought.options.map((label, i) => (
+                  <Button
+                    key={label}
+                    size="lg"
+                    variant={i === 0 && thought.options.length === 2 ? "default" : "outline"}
+                    onClick={() => vote(i)}
+                    disabled={pending}
+                    className={cn("h-auto min-h-10 py-2.5 whitespace-normal", thought.options.length > 2 && "justify-start text-left")}
+                  >
+                    {label}
+                  </Button>
+                ))}
               </div>
             </motion.div>
           ) : (
@@ -176,8 +184,9 @@ export function ThoughtCard({
               className="mt-6 space-y-5"
             >
               <ResultBar
-                meToo={thought.result!.meToo}
-                notMe={thought.result!.notMe}
+                options={thought.options}
+                counts={thought.result!}
+                myChoice={thought.myChoice}
                 mine={thought.isMine}
               />
               {peeked ? (

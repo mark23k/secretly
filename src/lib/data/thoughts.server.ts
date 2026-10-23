@@ -83,3 +83,14 @@ export async function getFeaturedThoughts(): Promise<Thought[]> {
   if (error) throw error;
   return data.map(toThought);
 }
+
+export type HomeTeaser = { kind: "thought" | "question"; id: string; body: string };
+
+/** Curated "tap to read" posts for the home page. */
+export async function getHomeTeasers(): Promise<HomeTeaser[]> {
+  const supabase = await db();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("get_home_teasers");
+  if (error) throw error;
+  return data.map((r) => ({ kind: r.kind === "question" ? "question" : "thought", id: r.id, body: r.body }));
+}

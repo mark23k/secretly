@@ -31,7 +31,7 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
   const [exhausted, setExhausted] = useState(initial.length === 0);
   const seen = useRef(new Set(initial.map((t) => t.id)));
   const loading = useRef(false);
-  const voteRef = useRef<((meToo: boolean) => void) | null>(null);
+  const voteRef = useRef<((choice: number) => void) | null>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
 
   const current = queue[index];
@@ -71,13 +71,16 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
     [index, exhausted, queue.length, loadMore]
   );
 
-  /** Right = "me too" (or next once voted), left = "not me" (or next). */
+  // Swiping picks between two answers; with 3-4 answers you tap (or press 1-4).
+  const swipeable = current?.options.length === 2;
+
+  /** Right = first answer (or next once voted), left = second answer (or next). */
   const act = useCallback(
     (dir: 1 | -1) => {
       if (voted) return next(dir);
-      voteRef.current?.(dir === 1);
+      if (swipeable) voteRef.current?.(dir === 1 ? 0 : 1);
     },
-    [voted, next]
+    [voted, next, swipeable]
   );
 
   // Keyboard: ← / → vote (then move on), S skips. Ignored while typing.
@@ -88,13 +91,15 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
       if (el?.closest("input, textarea, [contenteditable], [role=dialog]")) return;
       if (e.key === "ArrowRight") act(1);
       else if (e.key === "ArrowLeft") act(-1);
+      else if (!voted && /^[1-4]$/.test(e.key) && Number(e.key) <= (current?.options.length ?? 0))
+        voteRef.current?.(Number(e.key) - 1);
       else if (e.key.toLowerCase() === "s" && !voted) next(-1);
       else return;
       e.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [act, next, voted]);
+  }, [act, next, voted, current]);
 
   if (!current) {
     return (
@@ -132,7 +137,7 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
         ))}
 
         <AnimatePresence mode="popLayout" initial={false} custom={exitDir}>
-          <SwipeCard key={current.id} onSwipe={act} voted={voted}>
+          <SwipeCard key={current.id} onSwipe={act} voted={voted} labels={swipeable ? current.options : null}>
             <ThoughtCard
               thought={current}
               variant="deck"
@@ -154,7 +159,7 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
               <span className="font-medium text-foreground tabular-nums">{votedCount}</span> voted
             </>
           ) : (
-            <span className="hidden sm:inline">Swipe or use ← →</span>
+            <span className="hidden sm:inline">{swipeable ? "Swipe or use ← →" : "Tap an answer or press 1–4"}</span>
           )}
         </p>
         {voted ? (
@@ -183,10 +188,12 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
           </Button>
         </motion.div>
       ) : null}
-      <p className="text-center text-xs text-muted-foreground sm:hidden">
-        Swipe right for <span className="font-medium text-foreground">me too</span>, left for{" "}
-        <span className="font-medium text-foreground">not me</span>
-      </p>
+      {swipeable && !voted ? (
+        <p className="text-center text-xs text-muted-foreground sm:hidden">
+          Swipe right for <span className="font-medium text-foreground">{current.options[0].toLowerCase()}</span>, left
+          for <span className="font-medium text-foreground">{current.options[1].toLowerCase()}</span>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -203,11 +210,15 @@ function SwipeCard({
   children,
   onSwipe,
   voted,
+  labels,
 }: {
   children: React.ReactNode;
   onSwipe: (dir: 1 | -1) => void;
   voted: boolean;
+  /** The two answers swiping picks between; null when the card has 3-4 answers. */
+  labels: string[] | null;
 }) {
+  const draggable = voted || labels !== null;
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-240, 240], [-9, 9]);
   const yesOpacity = useTransform(x, [15, 70], [0, 1]);
@@ -220,7 +231,7 @@ function SwipeCard({
 
   return (
     <motion.div
-      drag="x"
+      drag={draggable ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.85}
       dragSnapToOrigin
@@ -234,21 +245,21 @@ function SwipeCard({
       className="relative cursor-grab touch-pan-y active:cursor-grabbing"
     >
       {children}
-      {!voted ? (
+      {!voted && labels ? (
         <>
           <motion.span
             aria-hidden
             style={{ opacity: yesOpacity }}
-            className="pointer-events-none absolute top-6 left-6 -rotate-12 rounded-xl border-2 border-primary bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-primary uppercase"
+            className="pointer-events-none absolute top-6 left-6 -rotate-12 max-w-[60%] truncate rounded-xl border-2 border-primary bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-primary uppercase"
           >
-            Me too
+            {labels[0]}
           </motion.span>
           <motion.span
             aria-hidden
             style={{ opacity: noOpacity }}
-            className="pointer-events-none absolute top-6 right-6 rotate-12 rounded-xl border-2 border-muted-foreground bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-muted-foreground uppercase"
+            className="pointer-events-none absolute top-6 right-6 rotate-12 max-w-[60%] truncate rounded-xl border-2 border-muted-foreground bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-muted-foreground uppercase"
           >
-            Not me
+            {labels[1]}
           </motion.span>
         </>
       ) : null}

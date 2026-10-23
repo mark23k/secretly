@@ -4,9 +4,11 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createThought } from "@/app/actions/thoughts";
 import { textLimits } from "@/config/limits";
-import { thoughtCategories, type ThoughtCategory } from "@/config/thoughts";
+import { DEFAULT_THOUGHT_OPTIONS, thoughtCategories, thoughtOptionLimits, type ThoughtCategory } from "@/config/thoughts";
 import { useAction } from "@/hooks/use-action";
+import { Plus, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AnonymityNote } from "@/components/shared/anonymity-note";
 import { CharCounter } from "@/components/shared/char-counter";
@@ -22,6 +24,7 @@ export function ThoughtComposer({ initialCategory = null }: { initialCategory?: 
   const router = useRouter();
   const [body, setBody] = useState("");
   const [category, setCategory] = useState<ThoughtCategory | null>(initialCategory);
+  const [options, setOptions] = useState<string[]>([...DEFAULT_THOUGHT_OPTIONS]);
   const [error, setError] = useState<string | null>(null);
   const { execute, pending } = useAction(createThought, {
     toastErrors: false,
@@ -34,11 +37,11 @@ export function ThoughtComposer({ initialCategory = null }: { initialCategory?: 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const res = await execute({ body, category: category ?? "other" });
+    const res = await execute({ body, category: category ?? "other", options });
     if (res.ok) {
       router.push(`/only-one/${res.data.id}?new=1`);
     } else {
-      setError(res.fieldErrors?.body ?? res.message);
+      setError(res.fieldErrors?.body ?? res.fieldErrors?.options ?? res.message);
     }
   }
 
@@ -71,6 +74,8 @@ export function ThoughtComposer({ initialCategory = null }: { initialCategory?: 
         </p>
       ) : null}
 
+      <OptionsEditor options={options} onChange={setOptions} />
+
       <fieldset>
         <legend id={ids.cats} className="mb-3 text-sm font-medium">
           What&apos;s it about? <span className="font-normal text-muted-foreground">(optional)</span>
@@ -97,10 +102,82 @@ export function ThoughtComposer({ initialCategory = null }: { initialCategory?: 
 
       <div className="space-y-4">
         <AnonymityNote />
-        <Button type="submit" size="lg" className="w-full" disabled={pending || tooShort || body.length > max}>
+        <Button type="submit" size="lg" className="w-full" disabled={pending || tooShort || body.length > max || options.some((o) => !o.trim())}>
           {pending ? "Posting…" : "Post anonymously"}
         </Button>
       </div>
     </form>
+  );
+}
+
+const { max: MAX_OPTIONS, maxLength: OPTION_MAX_LENGTH } = thoughtOptionLimits;
+const isDefaultOptions = (o: string[]) => o.length === 2 && o[0] === DEFAULT_THOUGHT_OPTIONS[0] && o[1] === DEFAULT_THOUGHT_OPTIONS[1];
+
+/** "Me too / Not me" by default; rename them or add up to 4 answers. */
+function OptionsEditor({ options, onChange }: { options: string[]; onChange: (o: string[]) => void }) {
+  const legend = useId();
+  const set = (i: number, value: string) => onChange(options.map((o, j) => (j === i ? value : o)));
+
+  return (
+    <fieldset aria-labelledby={legend} className="space-y-3">
+      <div className="flex items-end justify-between gap-3">
+        <p id={legend} className="text-sm font-medium">
+          Answers people can pick
+          <span className="block text-xs font-normal text-muted-foreground">
+            Keep the classic, or write your own. Up to {MAX_OPTIONS}.
+          </span>
+        </p>
+        {!isDefaultOptions(options) ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => onChange([...DEFAULT_THOUGHT_OPTIONS])}
+          >
+            <RotateCcw data-icon="inline-start" /> Reset
+          </Button>
+        ) : null}
+      </div>
+      <ul className="space-y-2">
+        {options.map((option, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <span className="w-5 shrink-0 text-center text-xs font-medium text-muted-foreground tabular-nums">{i + 1}</span>
+            <Input
+              value={option}
+              onChange={(e) => set(i, e.target.value)}
+              maxLength={OPTION_MAX_LENGTH}
+              placeholder={i === 0 ? "Me too" : i === 1 ? "Not me" : "Another answer"}
+              aria-label={`Answer ${i + 1}`}
+              className="h-11 rounded-xl bg-card"
+            />
+            {options.length > 2 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Remove answer ${i + 1}`}
+                onClick={() => onChange(options.filter((_, j) => j !== i))}
+              >
+                <X />
+              </Button>
+            ) : (
+              <span className="w-8 shrink-0" aria-hidden />
+            )}
+          </li>
+        ))}
+      </ul>
+      {options.length < MAX_OPTIONS ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="ml-7 rounded-full"
+          onClick={() => onChange([...options, ""])}
+        >
+          <Plus data-icon="inline-start" /> Add an answer
+        </Button>
+      ) : null}
+    </fieldset>
   );
 }

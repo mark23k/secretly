@@ -86,8 +86,13 @@ async function MyThoughts() {
   return (
     <ul className="space-y-3">
       {thoughts.map((t) => {
-        const total = t.result ? t.result.meToo + t.result.notMe : 0;
-        const pct = total ? Math.round((t.result!.meToo / total) * 100) : null;
+        const counts = t.result ?? [];
+        const total = counts.reduce((a, b) => a + b, 0);
+        const meTooStyle = t.options[0] === "Me too" && t.options.length === 2;
+        // "Me too" posts show how many relate; custom answers show the leading one.
+        const shown = meTooStyle ? 0 : counts.indexOf(Math.max(...counts));
+        const pct = total ? Math.round((counts[shown] / total) * 100) : null;
+        const summary = meTooStyle ? "relate" : `said “${t.options[shown]}”`;
         return (
           <li key={t.id}>
             <Link
@@ -102,7 +107,7 @@ async function MyThoughts() {
                 <span>{thoughtCategoryLabel[t.category]}</span>
                 <span suppressHydrationWarning>{timeAgo(t.createdAt)}</span>
                 <span className="font-medium text-primary">
-                  {pct === null ? "No votes yet" : `${pct}% relate · ${total} votes`}
+                  {pct === null ? "No votes yet" : `${pct}% ${summary} · ${total} votes`}
                 </span>
               </p>
             </Link>
