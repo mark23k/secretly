@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Clock, MessageCircle } from "lucide-react";
@@ -25,11 +25,14 @@ export function ThoughtCard({
   thought: initial,
   variant,
   onVoted,
+  voteRef,
   className,
 }: {
   thought: Thought;
   variant: Variant;
   onVoted?: (t: Thought) => void;
+  /** Lets the deck vote by swipe or keyboard. Set while the card can be voted on. */
+  voteRef?: React.RefObject<((meToo: boolean) => void) | null>;
   className?: string;
 }) {
   const [thought, setThought] = useState(initial);
@@ -45,6 +48,16 @@ export function ThoughtCard({
       onVoted?.(res.data);
     }
   }
+
+  useEffect(() => {
+    if (!voteRef) return;
+    const own = thought.result === null && !pending ? (meToo: boolean) => void vote(meToo) : null;
+    voteRef.current = own;
+    return () => {
+      // A card animating out unmounts after the next card took over: leave that one alone.
+      if (voteRef.current === own) voteRef.current = null;
+    };
+  });
 
   if (hidden) {
     return (
