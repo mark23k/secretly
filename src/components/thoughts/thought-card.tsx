@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
 import { Clock, MessageCircle, Moon } from "lucide-react";
 import { peekThought, voteThought } from "@/app/actions/thoughts";
@@ -58,6 +59,8 @@ export function ThoughtCard({
         setThought(peekedThought);
         setPeeked(true);
         onVoted?.(peekedThought);
+      } else {
+        toast.error(res.message);
       }
       return;
     }
