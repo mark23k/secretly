@@ -115,6 +115,7 @@ export type Database = {
           id: string;
           question_id: string;
           report_count: number;
+          seed_helpful: number;
           status: Database["public"]["Enums"]["content_status"];
         };
         ComputedFields: never;
@@ -126,6 +127,7 @@ export type Database = {
           id?: string;
           question_id: string;
           report_count?: number;
+          seed_helpful?: number;
           status?: Database["public"]["Enums"]["content_status"];
         };
         Update: {
@@ -136,6 +138,7 @@ export type Database = {
           id?: string;
           question_id?: string;
           report_count?: number;
+          seed_helpful?: number;
           status?: Database["public"]["Enums"]["content_status"];
         };
         Relationships: [
@@ -622,6 +625,7 @@ export type Database = {
           reaction_counts: NonNullable<Json>;
           reaction_total: number;
           report_count: number;
+          seed_reactions: NonNullable<Json>;
           status: Database["public"]["Enums"]["content_status"];
         };
         ComputedFields: never;
@@ -635,6 +639,7 @@ export type Database = {
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
+          seed_reactions?: NonNullable<Json>;
           status?: Database["public"]["Enums"]["content_status"];
         };
         Update: {
@@ -647,6 +652,7 @@ export type Database = {
           reaction_counts?: NonNullable<Json>;
           reaction_total?: number;
           report_count?: number;
+          seed_reactions?: NonNullable<Json>;
           status?: Database["public"]["Enums"]["content_status"];
         };
         Relationships: [
