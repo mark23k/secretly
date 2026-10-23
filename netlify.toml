@@ -4,3 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# The custom domain is the only public address: send the old one there.
+[[redirects]]
+  from = "https://sharesecretly.netlify.app/*"
+  to = "https://saysecretly.com/:splat"
+  status = 301
+  force = true
