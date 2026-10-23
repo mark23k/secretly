@@ -190,8 +190,8 @@ function SwipeCard({
 }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-240, 240], [-9, 9]);
-  const yesOpacity = useTransform(x, [20, SWIPE_DISTANCE], [0, 1]);
-  const noOpacity = useTransform(x, [-SWIPE_DISTANCE, -20], [1, 0]);
+  const yesOpacity = useTransform(x, [15, 70], [0, 1]);
+  const noOpacity = useTransform(x, [-70, -15], [1, 0]);
 
   function onDragEnd(_: unknown, info: PanInfo) {
     if (info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY) onSwipe(1);
@@ -219,14 +219,14 @@ function SwipeCard({
           <motion.span
             aria-hidden
             style={{ opacity: yesOpacity }}
-            className="pointer-events-none absolute top-6 left-6 -rotate-12 rounded-xl border-2 border-primary px-3 py-1 font-sans text-lg font-bold tracking-wide text-primary uppercase"
+            className="pointer-events-none absolute top-6 left-6 -rotate-12 rounded-xl border-2 border-primary bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-primary uppercase"
           >
             Me too
           </motion.span>
           <motion.span
             aria-hidden
             style={{ opacity: noOpacity }}
-            className="pointer-events-none absolute top-6 right-6 rotate-12 rounded-xl border-2 border-muted-foreground px-3 py-1 font-sans text-lg font-bold tracking-wide text-muted-foreground uppercase"
+            className="pointer-events-none absolute top-6 right-6 rotate-12 rounded-xl border-2 border-muted-foreground bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-muted-foreground uppercase"
           >
             Not me
           </motion.span>
