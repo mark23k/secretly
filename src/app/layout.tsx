@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Suspense } from "react";
 import { VisitTracker } from "@/components/analytics/visit-tracker";
+import { MobileTabBar, MobileTabBarLinks } from "@/components/layout/mobile-tab-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { siteConfig } from "@/config/site";
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fcfaf7" },
     { media: "(prefers-color-scheme: dark)", color: "#16131a" },
@@ -53,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${inter.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0">
         <Providers>
           <TooltipProvider>
             <SiteHeader />
@@ -61,6 +63,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {children}
             </main>
             <SiteFooter />
+            <Suspense fallback={<MobileTabBarLinks pathname="" />}>
+              <MobileTabBar />
+            </Suspense>
             <Toaster position="top-center" />
             <Suspense>
               <VisitTracker />

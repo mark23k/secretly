@@ -132,7 +132,7 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
           <div
             key={t.id}
             aria-hidden
-            className="absolute inset-x-0 top-0 h-full rounded-3xl border bg-card shadow-sm"
+            className="absolute inset-x-0 top-0 h-full rounded-[2rem] border border-white/10 bg-[#24142b] shadow-sm"
             style={{
               transform: `translateY(${(i + 1) * 10}px) rotate(${i === 0 ? -2.5 : 3}deg) scale(${1 - (i + 1) * 0.025})`,
               opacity: 1 - (i + 1) * 0.25,
@@ -201,14 +201,6 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
           </Button>
         )}
       </div>
-      {swipeable && !voted && !locked ? (
-        <p className="text-center text-xs text-muted-foreground sm:hidden">
-          Swipe right for{" "}
-          <span className="font-medium text-foreground">{current.options[0].toLowerCase()}</span>,
-          left for{" "}
-          <span className="font-medium text-foreground">{current.options[1].toLowerCase()}</span>
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -270,14 +262,14 @@ function SwipeCard({
           <motion.span
             aria-hidden
             style={{ opacity: yesOpacity }}
-            className="pointer-events-none absolute top-6 left-6 -rotate-12 max-w-[60%] truncate rounded-xl border-2 border-primary bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-primary uppercase"
+            className="pointer-events-none absolute top-6 left-6 -rotate-12 max-w-[60%] truncate rounded-xl border-2 border-[#e2c3ea] bg-[#1c1422]/80 px-3 py-1 font-sans text-lg font-bold tracking-wide text-[#e2c3ea] uppercase"
           >
             {labels[0]}
           </motion.span>
           <motion.span
             aria-hidden
             style={{ opacity: noOpacity }}
-            className="pointer-events-none absolute top-6 right-6 rotate-12 max-w-[60%] truncate rounded-xl border-2 border-muted-foreground bg-card px-3 py-1 font-sans text-lg font-bold tracking-wide text-muted-foreground uppercase"
+            className="pointer-events-none absolute top-6 right-6 rotate-12 max-w-[60%] truncate rounded-xl border-2 border-white/60 bg-[#1c1422]/80 px-3 py-1 font-sans text-lg font-bold tracking-wide text-white/80 uppercase"
           >
             {labels[1]}
           </motion.span>
@@ -292,7 +284,7 @@ export function ThoughtDeckSkeleton() {
     <div
       aria-busy="true"
       aria-label="Loading thoughts"
-      className="rounded-3xl border bg-card p-6 sm:p-8"
+      className="dark flex min-h-[max(20rem,calc(100dvh-21rem))] flex-col justify-between rounded-[2rem] border border-white/10 bg-[#24142b] p-6 sm:min-h-[30rem] sm:p-8"
     >
       <div className="flex gap-2">
         <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
@@ -327,7 +319,7 @@ function GuestWall({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-h-[22rem] overflow-hidden rounded-3xl border bg-card p-6 shadow-[0_1px_2px_rgb(0_0_0/0.03)] sm:p-8"
+      className="dark relative flex min-h-[max(20rem,calc(100dvh-21rem))] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(130%_85%_at_50%_0%,#5e2a6b_0%,#2c1533_48%,#140d17_100%)] p-6 text-foreground sm:min-h-[30rem] sm:p-8"
     >
       <p
         aria-hidden
@@ -335,7 +327,7 @@ function GuestWall({
       >
         {teaser}
       </p>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-card/70 p-6 text-center backdrop-blur-[2px]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#140d17]/55 p-6 text-center backdrop-blur-[2px]">
         <span className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Lock className="size-5" aria-hidden />
         </span>

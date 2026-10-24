@@ -15,14 +15,19 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <section id="deck" aria-labelledby="deck-heading" className="mx-auto max-w-xl scroll-mt-20 px-5">
-        <h2 id="deck-heading" className="mb-5 text-center font-sans text-sm font-semibold tracking-normal text-muted-foreground">
-          👉 Swipe right if you&apos;ve done it too
+      <MobileIntro />
+      <section id="deck" aria-labelledby="deck-heading" className="mx-auto max-w-xl scroll-mt-20 px-4 sm:px-5">
+        <h2
+          id="deck-heading"
+          className="mb-3 text-center font-sans text-sm font-semibold tracking-normal text-muted-foreground sm:mb-5"
+        >
+          🔥 Swipe right if you&apos;ve done it too
         </h2>
         <Suspense fallback={<ThoughtDeckSkeleton />}>
           <HomeDeck />
         </Suspense>
       </section>
+      <MobileHowItWorks />
       <section aria-labelledby="teasers-heading" className="mx-auto mt-24 max-w-5xl px-5">
         <h2 id="teasers-heading" className="text-center text-3xl font-normal sm:text-4xl">
           Things people <em className="text-primary">won&apos;t</em> say out loud
@@ -56,7 +61,7 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden">
+    <section className="relative isolate hidden overflow-hidden sm:block">
       <DriftingConfessions />
       <div className="mx-auto max-w-3xl px-5 pt-12 pb-10 text-center sm:pt-20 sm:pb-12">
         <p className="mx-auto mb-5 inline-flex animate-fade-up items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
@@ -88,6 +93,45 @@ function Hero() {
           <HeroActions />
         </div>
       </div>
+    </section>
+  );
+}
+
+/** Phones: a one-line intro, so the swipe card can fill the screen like an app. */
+function MobileIntro() {
+  return (
+    <div className="px-4 pt-3 pb-2 text-center sm:hidden">
+      <p className="inline-flex items-center gap-1.5 rounded-full border bg-card/70 px-3 py-1 text-[0.7rem] font-medium text-muted-foreground">
+        <span className="size-1.5 rounded-full bg-primary" aria-hidden /> 100% anonymous · 18+ · Free
+      </p>
+      <h1 className="mt-2 text-[1.45rem] leading-tight font-normal">
+        Go on. <em className="text-primary">Nobody will know it was you.</em>
+      </h1>
+    </div>
+  );
+}
+
+/** Phones: the three steps and sign-up, right under the deck. */
+function MobileHowItWorks() {
+  return (
+    <section aria-label="How it works" className="mx-4 mt-10 space-y-4 rounded-3xl border bg-card p-5 sm:hidden">
+      <ol className="space-y-3 text-sm">
+        {[
+          ["Swipe", "a stranger's confession"],
+          ["See", "how many people secretly do it too"],
+          ["Sign up free", "to post your own, ask anything, and trade secrets"],
+        ].map(([strong, rest], i) => (
+          <li key={strong} className="flex items-center gap-3">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+              {i + 1}
+            </span>
+            <span>
+              <span className="font-semibold">{strong}</span> <span className="text-muted-foreground">{rest}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <HeroActions />
     </section>
   );
 }
