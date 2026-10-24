@@ -43,3 +43,32 @@ export function niceTicks(max: number, count = 4): number[] {
   const step = Math.max(1, [1, 2, 5, 10].map((f) => f * mag).find((s) => s >= raw) ?? 10 * mag);
   return Array.from({ length: count + 1 }, (_, i) => i * step);
 }
+
+/** Today's date ("YYYY-MM-DD") in a time zone. */
+export function todayIn(timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/** "2026-10-24" plus n days. */
+export function addDays(isoDay: string, n: number): string {
+  const [y, m, d] = isoDay.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+/** "Oct 1 – Oct 24, 2026", or a single day. */
+export function rangeLabel(from: string, to: string): string {
+  const fmt = (iso: string, withYear: boolean) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Intl.DateTimeFormat("en", {
+      month: "short",
+      day: "numeric",
+      year: withYear ? "numeric" : undefined,
+      timeZone: "UTC",
+    }).format(new Date(Date.UTC(y, m - 1, d)));
+  };
+  return from === to ? fmt(to, true) : `${fmt(from, from.slice(0, 4) !== to.slice(0, 4))} – ${fmt(to, true)}`;
+}

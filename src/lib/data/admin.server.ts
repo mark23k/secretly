@@ -18,6 +18,9 @@ export type DailyStat = {
 export type HourlyStat = { hour: number; interactions: number; visits: number };
 
 export type AdminStats = {
+  /** First and last local day of the range, "YYYY-MM-DD". */
+  from: string;
+  to: string;
   days: number;
   timeZone: string;
   generatedAt: string;
@@ -44,12 +47,48 @@ export type AdminStats = {
   byKind: Record<string, number>;
 };
 
-/** Callers must check the viewer is an admin first (see lib/server/admin). */
-export async function getAdminStats(days: number, timeZone: string): Promise<AdminStats> {
+/**
+ * Dashboard numbers for a range of local days. `from`/`to` are "YYYY-MM-DD";
+ * omit them for the last 30 days. Callers must check the viewer is an admin
+ * first (see lib/server/admin).
+ */
+export async function getAdminStats(
+  range: { from?: string; to?: string },
+  timeZone: string
+): Promise<AdminStats> {
   await connection();
-  const { data, error } = await createAdminClient().rpc("admin_stats", { p_days: days, p_tz: timeZone });
+  const { data, error } = await createAdminClient().rpc("admin_stats_range", {
+    p_from: range.from as string,
+    p_to: range.to as string,
+    p_tz: timeZone,
+  });
   if (error) throw error;
   return data as unknown as AdminStats;
+}
+
+export type DayPost = {
+  kind: "thought" | "question";
+  id: string;
+  text: string;
+  category: string;
+  status: "published" | "pending" | "hidden" | "removed";
+  createdAt: string;
+  options: string[] | null;
+  /** Comments (thoughts) or answers (questions). */
+  comments: number;
+};
+
+export type DayPosts = {
+  posts: DayPost[];
+  counts: { comments: number; answers: number; secrets: number; secretReplies: number };
+};
+
+/** What real members posted on one local day. Admin only. */
+export async function getDayPosts(day: string, timeZone: string): Promise<DayPosts> {
+  await connection();
+  const { data, error } = await createAdminClient().rpc("admin_day_posts", { p_day: day, p_tz: timeZone });
+  if (error) throw error;
+  return data as unknown as DayPosts;
 }
 
 export async function getLiveStats(): Promise<LiveStats> {

@@ -689,6 +689,7 @@ export type Database = {
           created_at: string;
           id: string;
           ip_hash: string | null;
+          is_seed: boolean;
           time_zone: string;
         };
         ComputedFields: never;
@@ -699,6 +700,7 @@ export type Database = {
           created_at?: string;
           id: string;
           ip_hash?: string | null;
+          is_seed?: boolean;
           time_zone?: string;
         };
         Update: {
@@ -708,6 +710,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           ip_hash?: string | null;
+          is_seed?: boolean;
           time_zone?: string;
         };
         Relationships: [];
@@ -743,6 +746,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_day_posts: { Args: { p_day: string; p_tz: string }; Returns: Json };
       admin_live_stats: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_moderate: {
         Args: {
@@ -755,6 +759,7 @@ export type Database = {
       };
       admin_moderation_queue: { Args: { p_limit?: number }; Returns: Json };
       admin_stats: { Args: { p_days: number; p_tz: string }; Returns: Json };
+      admin_stats_range: { Args: { p_from: string; p_to: string; p_tz: string }; Returns: Json };
       admin_unban: { Args: { p_visitor: string }; Returns: undefined };
       author_code: { Args: { p_id: string }; Returns: string };
       cast_thought_vote: {

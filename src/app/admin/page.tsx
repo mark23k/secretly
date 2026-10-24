@@ -7,30 +7,21 @@ import { BarList } from "@/components/admin/bar-list";
 import { ChartCard } from "@/components/admin/chart-card";
 import { ColumnChart, type Column } from "@/components/admin/column-chart";
 import { DashboardTabs } from "@/components/admin/dashboard-tabs";
-import { dashboardTabs, rangeOptions, type DashboardTab } from "@/config/admin";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { dashboardTabs, ISO_DAY, rangeOptions, type DashboardTab } from "@/config/admin";
 import { LiveNow } from "@/components/admin/live-now";
 import { RangePicker } from "@/components/admin/range-picker";
 import { StatGrid, StatTile } from "@/components/admin/stat-tile";
 import { getAccountTimeZone, getAdminStats, getLiveStats, type AdminStats } from "@/lib/data/admin.server";
 import { requireAdminPage } from "@/lib/server/admin";
-import { dayLabel, formatDuration, hourLabel, hourRangeLabel } from "@/lib/format";
+import { addDays, dayLabel, formatDuration, rangeLabel, todayIn } from "@/lib/format";
+import { busiestHour, hourlyColumns, KIND_LABEL, ratio } from "@/lib/admin-stats";
 import { formatCount } from "@/lib/time";
 
 export const metadata: Metadata = {
   title: "Manager dashboard",
   robots: { index: false, follow: false },
-};
-
-const KIND_LABEL: Record<string, string> = {
-  thought: "Thoughts shared",
-  thought_vote: "Me too / Not me votes",
-  thought_reaction: "Reactions on thoughts",
-  thought_comment: "Comments on thoughts",
-  question: "Questions asked",
-  answer: "Answers",
-  answer_vote: "Answer votes",
-  secret: "Secrets given",
-  secret_reply: "Replies to secrets",
 };
 
 export default function AdminPage({ searchParams }: PageProps<"/admin">) {
@@ -46,12 +37,18 @@ export default function AdminPage({ searchParams }: PageProps<"/admin">) {
 async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchParams">) {
   const user = await requireAdminPage("/admin");
   const params = await searchParams;
-  const daysParam = Number(params.days);
-  const days = (rangeOptions as readonly number[]).includes(daysParam) ? daysParam : 30;
   const tab = dashboardTabs.find((t) => t.value === params.tab)?.value ?? "overview";
-
   const timeZone = await getAccountTimeZone(user.id);
-  const [stats, live] = await Promise.all([getAdminStats(days, timeZone), getLiveStats()]);
+  const today = todayIn(timeZone);
+
+  // Either a custom from/to range or a preset ("last N days", default 30).
+  const fromParam = typeof params.from === "string" && ISO_DAY.test(params.from) ? params.from : null;
+  const toParam = typeof params.to === "string" && ISO_DAY.test(params.to) ? params.to : null;
+  const daysParam = Number(params.days);
+  const days = fromParam && toParam ? null : (rangeOptions as readonly number[]).includes(daysParam) ? daysParam : 30;
+  const range = days === null ? { from: fromParam!, to: toParam! } : { from: addDays(today, -(days - 1)), to: today };
+
+  const [stats, live] = await Promise.all([getAdminStats(range, timeZone), getLiveStats()]);
 
   return (
     <div className="space-y-8">
@@ -61,10 +58,11 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
           <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-primary uppercase">Only visible to managers</p>
           <h1 className="text-4xl font-normal sm:text-5xl">Dashboard</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Last {days} days · times in {stats.timeZone.replace(/_/g, " ")} · counts only, never who did what
+            {rangeLabel(stats.from, stats.to)} ({stats.days} {stats.days === 1 ? "day" : "days"}) · times in{" "}
+            {stats.timeZone.replace(/_/g, " ")} · counts only, never who did what
           </p>
         </div>
-        <RangePicker days={days} />
+        <RangePicker days={days} from={stats.from} to={stats.to} today={today} />
       </header>
 
       <LiveNow initial={live} />
@@ -72,6 +70,9 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
       <DashboardTabs initial={tab as DashboardTab}>
         <TabsContent value="overview" className="space-y-6">
           <Overview stats={stats} />
+        </TabsContent>
+        <TabsContent value="daily" className="space-y-6">
+          <DayByDay stats={stats} />
         </TabsContent>
         <TabsContent value="visitors" className="space-y-6">
           <Visitors stats={stats} />
@@ -93,31 +94,13 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchPara
 
 function dailyColumns(stats: AdminStats, pick: (d: AdminStats["daily"][number]) => number): Column[] {
   const n = stats.daily.length;
-  const every = n <= 7 ? 1 : n <= 31 ? 7 : 15;
+  const every = n <= 7 ? 1 : n <= 31 ? 7 : n <= 120 ? 15 : 60;
   return stats.daily.map((d, i) => ({
     key: d.day,
     label: dayLabel(d.day, true),
     axisLabel: (n - 1 - i) % every === 0 ? dayLabel(d.day) : undefined,
     value: pick(d),
   }));
-}
-
-function hourlyColumns(stats: AdminStats, pick: (h: AdminStats["hourly"][number]) => number): Column[] {
-  return stats.hourly.map((h) => ({
-    key: String(h.hour),
-    label: hourRangeLabel(h.hour),
-    axisLabel: h.hour % 6 === 0 ? hourLabel(h.hour, true) : undefined,
-    value: pick(h),
-  }));
-}
-
-function busiestHour(stats: AdminStats, pick: (h: AdminStats["hourly"][number]) => number): string {
-  const best = stats.hourly.reduce((a, b) => (pick(b) > pick(a) ? b : a), stats.hourly[0]);
-  return best && pick(best) > 0 ? hourRangeLabel(best.hour) : "Not enough data";
-}
-
-function ratio(n: number | null | undefined): string {
-  return n == null ? "0" : Number(n).toLocaleString("en", { maximumFractionDigits: 1 });
 }
 
 // -----------------------------------------------------------------------------
@@ -170,7 +153,7 @@ function Members({ stats }: { stats: AdminStats }) {
     <>
       <StatGrid>
         <StatTile label="Members" value={formatCount(t.members)} hint="Accounts, all time" />
-        <StatTile label="New members" value={formatCount(t.newMembers)} hint={`In the last ${stats.days} days`} />
+        <StatTile label="New members" value={formatCount(t.newMembers)} hint="In this date range" />
         <StatTile label="Active members" value={formatCount(t.activeMembers)} hint="Posted, replied, voted or reacted" />
         <StatTile
           label="Members who've posted"
@@ -220,10 +203,69 @@ function Content({ stats }: { stats: AdminStats }) {
           <ColumnChart data={dailyColumns(stats, (d) => d.interactions)} valueName="interactions" categoryName="Day" height={150} />
         </ChartCard>
       </div>
-      <ChartCard title="What people do" description={`Every interaction in the last ${stats.days} days, by type.`}>
+      <ChartCard title="What people do" description="Every interaction in this date range, by type.">
         <BarList items={kinds} emptyText="Nothing yet in this period." />
       </ChartCard>
     </>
+  );
+}
+
+/** One row per day, newest first; each opens that day's page. */
+function DayByDay({ stats }: { stats: AdminStats }) {
+  const rows = [...stats.daily].reverse();
+  const sum = (key: "visitors" | "signups" | "posts" | "interactions") =>
+    stats.daily.reduce((n, d) => n + d[key], 0);
+  return (
+    <section aria-labelledby="daily-heading" className="space-y-3">
+      <div className="flex items-end justify-between gap-3">
+        <h2 id="daily-heading" className="font-sans text-base font-semibold tracking-normal">
+          Every day in this range
+        </h2>
+        <p className="text-xs text-muted-foreground">Tap a day for the full picture</p>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border bg-card">
+        <table className="w-full min-w-[34rem] text-sm">
+          <thead className="bg-muted/60 text-xs text-muted-foreground">
+            <tr>
+              <th scope="col" className="px-4 py-2.5 text-left font-medium">Day</th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">Visitors</th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">Sign-ups</th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">Posts</th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">Interactions</th>
+              <th scope="col" className="w-8"><span className="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody className="tabular-nums">
+            {rows.map((d) => (
+              <tr key={d.day} className="group relative border-t transition-colors hover:bg-muted/40">
+                <td className="px-4 py-2.5">
+                  <Link href={`/admin/day/${d.day}`} className="font-medium after:absolute after:inset-0 group-hover:text-primary">
+                    {dayLabel(d.day, true)}
+                  </Link>
+                </td>
+                <td className="px-4 py-2.5 text-right">{d.visitors.toLocaleString("en")}</td>
+                <td className="px-4 py-2.5 text-right">{d.signups.toLocaleString("en")}</td>
+                <td className="px-4 py-2.5 text-right">{d.posts.toLocaleString("en")}</td>
+                <td className="px-4 py-2.5 text-right">{d.interactions.toLocaleString("en")}</td>
+                <td className="pr-3 text-muted-foreground"><ChevronRight className="size-4" aria-hidden /></td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="border-t bg-muted/40 font-semibold tabular-nums">
+            <tr>
+              <td className="px-4 py-2.5">Total</td>
+              <td className="px-4 py-2.5 text-right text-muted-foreground" title="Visitors are counted per day, so the total isn't unique people">
+                {sum("visitors").toLocaleString("en")}
+              </td>
+              <td className="px-4 py-2.5 text-right">{sum("signups").toLocaleString("en")}</td>
+              <td className="px-4 py-2.5 text-right">{sum("posts").toLocaleString("en")}</td>
+              <td className="px-4 py-2.5 text-right">{sum("interactions").toLocaleString("en")}</td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
   );
 }
 
