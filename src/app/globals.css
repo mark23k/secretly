@@ -35,6 +35,17 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-drift: drift 18s ease-in-out infinite alternate;
+}
+
+/* Slow float for the confession snippets behind the home hero. */
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--drift-x, 24px), var(--drift-y, -18px), 0);
+  }
 }
 
 @keyframes fade-up {

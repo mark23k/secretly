@@ -7,6 +7,7 @@ import {
   MobileNavSheet,
 } from "@/components/layout/main-nav";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { MobileSignUp } from "@/components/layout/account-menu";
 
 export function SiteHeader() {
   return (
@@ -23,6 +24,7 @@ export function SiteHeader() {
           <Suspense fallback={<MainNavLinks pathname="" />}>
             <MainNav />
           </Suspense>
+          <MobileSignUp />
           <ThemeToggle />
           <Suspense fallback={<MobileNavSheet pathname="" />}>
             <MobileNav />

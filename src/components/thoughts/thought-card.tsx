@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ReportButton } from "@/components/shared/report-button";
 import { AfterDarkVeil } from "@/components/after-dark/after-dark-veil";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useGuestAllowance } from "@/hooks/use-guest-allowance";
 import { ResultBar } from "./result-bar";
 import { ReactionBar } from "./reaction-bar";
 
@@ -43,14 +44,19 @@ export function ThoughtCard({
   const [peeked, setPeeked] = useState(false);
   const [peeking, setPeeking] = useState(false);
   const { user, openAuth } = useAuth();
-  const { execute, pending: voting } = useAction(voteThought);
+  const guest = useGuestAllowance();
+  const { execute, pending: voting } = useAction(voteThought, {
+    authReason: "That's your 3 free looks. Create a free account to keep going, it stays anonymous.",
+  });
   const pending = voting || peeking;
   const revealed = thought.result !== null;
   const href = `/only-one/${thought.id}`;
 
   async function vote(choice: number) {
-    // Signed out: show the result straight away; the vote counts once they sign up.
-    if (user === null) {
+    // Signed out: a few free looks show the result straight away (not counted).
+    // After that, voting asks them to sign up and then counts the vote.
+    if (user === null && !guest.exhausted) {
+      guest.use();
       setPeeking(true);
       const res = await peekThought({ thoughtId: thought.id });
       setPeeking(false);

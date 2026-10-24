@@ -25,13 +25,18 @@ async function signOutWithToast(signOut: () => Promise<void>) {
 export function AccountMenu({ className }: { className?: string }) {
   const { user, openAuth, signOut } = useAuth();
 
-  if (user === undefined) return <div className={cn("h-8 w-20", className)} aria-hidden />;
+  if (user === undefined) return <div className={cn("h-8 w-40", className)} aria-hidden />;
 
   if (!user) {
     return (
-      <Button variant="outline" size="sm" className={cn("ml-2 rounded-lg", className)} onClick={() => openAuth()}>
-        Sign in
-      </Button>
+      <div className={cn("ml-2 flex items-center gap-1", className)}>
+        <Button variant="ghost" size="sm" className="hidden rounded-lg lg:inline-flex" onClick={() => openAuth("sign-in")}>
+          Sign in
+        </Button>
+        <Button size="sm" className="rounded-full px-4" onClick={() => openAuth("sign-up")}>
+          Sign up free
+        </Button>
+      </div>
     );
   }
 
@@ -107,5 +112,16 @@ export function MobileAccountLinks({ isActive }: { isActive: (href: string) => b
         </button>
       </SheetClose>
     </>
+  );
+}
+
+/** Phone header: a compact "Sign up" for signed-out visitors (desktop has AccountMenu). */
+export function MobileSignUp() {
+  const { user, openAuth } = useAuth();
+  if (user !== null) return null;
+  return (
+    <Button size="sm" className="rounded-full px-3.5 sm:hidden" onClick={() => openAuth("sign-up")}>
+      Sign up
+    </Button>
   );
 }

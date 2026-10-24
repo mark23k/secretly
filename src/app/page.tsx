@@ -6,6 +6,8 @@ import { features, type FeatureKey } from "@/config/site";
 import { getQuestionFeed } from "@/lib/data/questions.server";
 import { getFeaturedThoughts, getHomeTeasers, getNextThoughts, getThoughtFeed } from "@/lib/data/thoughts.server";
 import { ThoughtDeck, ThoughtDeckSkeleton } from "@/components/thoughts/thought-deck";
+import { DriftingConfessions } from "@/components/home/drifting-confessions";
+import { HeroActions } from "@/components/home/hero-actions";
 
 const order: FeatureKey[] = ["only-one", "ask", "exchange"];
 
@@ -13,7 +15,10 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <section aria-label="Swipe through anonymous thoughts" className="mx-auto max-w-xl px-5">
+      <section id="deck" aria-labelledby="deck-heading" className="mx-auto max-w-xl scroll-mt-20 px-5">
+        <h2 id="deck-heading" className="mb-5 text-center font-sans text-sm font-semibold tracking-normal text-muted-foreground">
+          👉 Swipe right if you&apos;ve done it too
+        </h2>
         <Suspense fallback={<ThoughtDeckSkeleton />}>
           <HomeDeck />
         </Suspense>
@@ -51,23 +56,37 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-40 -z-10 mx-auto h-[28rem] max-w-3xl rounded-full bg-primary/10 blur-3xl dark:bg-primary/15"
-      />
+    <section className="relative isolate overflow-hidden">
+      <DriftingConfessions />
       <div className="mx-auto max-w-3xl px-5 pt-12 pb-10 text-center sm:pt-20 sm:pb-12">
-        <p className="mx-auto mb-5 inline-flex animate-fade-up items-center gap-2 rounded-full border bg-card/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
+        <p className="mx-auto mb-5 inline-flex animate-fade-up items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
           <span className="size-1.5 rounded-full bg-primary" aria-hidden />
-          Anonymous · 18+ · Free
+          100% anonymous · 18+ · Free
         </p>
         <h1 className="animate-fade-up text-[2.6rem] leading-[1.05] font-normal [animation-delay:60ms] sm:text-6xl">
           Go on. <em className="text-primary">Nobody will know it was you.</em>
         </h1>
-        <p className="mx-auto mt-5 max-w-xl animate-fade-up text-lg text-pretty text-muted-foreground [animation-delay:120ms]">
-          Confess what you&apos;ve never admitted. Ask the awkward one. Trade secrets with strangers.
-          <span className="mt-2 block font-medium text-foreground">Start here: does anyone else do this?</span>
+        <p className="mx-auto mt-5 max-w-lg animate-fade-up text-lg text-pretty text-muted-foreground [animation-delay:120ms]">
+          Anonymous confessions, awkward questions and secrets swapped with strangers.
         </p>
+        <ol className="mx-auto mt-7 grid max-w-xl animate-fade-up grid-cols-3 gap-2 text-left text-xs [animation-delay:160ms] sm:gap-3 sm:text-sm">
+          {[
+            ["Swipe", "a stranger's confession"],
+            ["See", "how many people do it too"],
+            ["Sign up free", "to post your own"],
+          ].map(([strong, rest], i) => (
+            <li key={strong} className="rounded-2xl border bg-card/70 p-3 backdrop-blur">
+              <span className="mb-1 flex size-6 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground">
+                {i + 1}
+              </span>
+              <span className="font-semibold text-foreground">{strong}</span>{" "}
+              <span className="text-muted-foreground">{rest}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-8 animate-fade-up [animation-delay:220ms]">
+          <HeroActions />
+        </div>
       </div>
     </section>
   );

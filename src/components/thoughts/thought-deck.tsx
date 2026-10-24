@@ -3,18 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { ArrowRight, Flame, Plus, SkipForward, Sparkles } from "lucide-react";
+import { ArrowRight, Flame, Lock, Plus, SkipForward } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toThought, type Thought } from "@/lib/data/thoughts";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/components/providers/auth-provider";
+import { GUEST_FREE_LOOKS, useGuestAllowance } from "@/hooks/use-guest-allowance";
 import { ThoughtCard } from "./thought-card";
 
 const SWIPE_DISTANCE = 110;
 const SWIPE_VELOCITY = 550;
-/** Guests see results right away; after this many we invite them to sign up. */
-const GUEST_NUDGE_AFTER = 3;
 
 /**
  * Card mode: a deck of thoughts. Vote by tapping, swiping (right = me too,
@@ -23,6 +22,7 @@ const GUEST_NUDGE_AFTER = 3;
  */
 export function ThoughtDeck({ initial }: { initial: Thought[] }) {
   const { user, openAuth } = useAuth();
+  const guest = useGuestAllowance();
   const [queue, setQueue] = useState(initial);
   const [index, setIndex] = useState(0);
   const [voted, setVoted] = useState(false);
@@ -36,6 +36,8 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
 
   const current = queue[index];
   const behind = queue.slice(index + 1, index + 3);
+  // Signed-out visitors get a few free looks, then the deck asks them to sign up.
+  const locked = user === null && guest.exhausted && !voted;
 
   const loadMore = useCallback(async () => {
     if (loading.current) return;
@@ -63,12 +65,14 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
 
   const next = useCallback(
     (dir: 1 | -1 = -1) => {
+      // Skipping without voting uses one of a guest's free looks too.
+      if (user === null && !voted) guest.use();
       setExitDir(dir);
       setVoted(false);
       setIndex(index + 1);
       if (!exhausted && queue.length - (index + 1) <= 3) void loadMore();
     },
-    [index, exhausted, queue.length, loadMore]
+    [index, exhausted, queue.length, loadMore, user, voted, guest],
   );
 
   // Swiping picks between two answers; with 3-4 answers you tap (or press 1-4).
@@ -80,12 +84,13 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
       if (voted) return next(dir);
       if (swipeable) voteRef.current?.(dir === 1 ? 0 : 1);
     },
-    [voted, next, swipeable]
+    [voted, next, swipeable],
   );
 
   // Keyboard: ← / → vote (then move on), S skips. Ignored while typing.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (locked) return;
       const el = e.target as HTMLElement | null;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (el?.closest("input, textarea, [contenteditable], [role=dialog]")) return;
@@ -99,7 +104,7 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [act, next, voted, current]);
+  }, [act, next, voted, current, locked]);
 
   if (!current) {
     return (
@@ -137,32 +142,56 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
         ))}
 
         <AnimatePresence mode="popLayout" initial={false} custom={exitDir}>
-          <SwipeCard key={current.id} onSwipe={act} voted={voted} labels={swipeable ? current.options : null}>
-            <ThoughtCard
-              thought={current}
-              variant="deck"
-              voteRef={voteRef}
-              onVoted={() => {
-                setVoted(true);
-                setVotedCount((n) => n + 1);
-              }}
+          {locked ? (
+            <GuestWall
+              key="wall"
+              teaser={current.body}
+              onSignUp={() => openAuth("sign-up")}
+              onSignIn={() => openAuth("sign-in")}
             />
-          </SwipeCard>
+          ) : (
+            <SwipeCard
+              key={current.id}
+              onSwipe={act}
+              voted={voted}
+              labels={swipeable ? current.options : null}
+            >
+              <ThoughtCard
+                thought={current}
+                variant="deck"
+                voteRef={voteRef}
+                onVoted={() => {
+                  setVoted(true);
+                  setVotedCount((n) => n + 1);
+                }}
+              />
+            </SwipeCard>
+          )}
         </AnimatePresence>
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-3">
-        <p className="flex min-w-24 items-center gap-1.5 text-sm text-muted-foreground" aria-live="polite">
-          {votedCount > 0 ? (
+        <p
+          className="flex min-w-24 items-center gap-1.5 text-sm text-muted-foreground"
+          aria-live="polite"
+        >
+          {user === null && !locked ? (
+            <>
+              <span className="font-medium text-foreground tabular-nums">{guest.left}</span> free{" "}
+              {guest.left === 1 ? "look" : "looks"} left
+            </>
+          ) : votedCount > 0 ? (
             <>
               <Flame className="size-4 text-primary" aria-hidden />
               <span className="font-medium text-foreground tabular-nums">{votedCount}</span> voted
             </>
           ) : (
-            <span className="hidden sm:inline">{swipeable ? "Swipe or use ← →" : "Tap an answer or press 1–4"}</span>
+            <span className="hidden sm:inline">
+              {swipeable ? "Swipe or use ← →" : "Tap an answer or press 1–4"}
+            </span>
           )}
         </p>
-        {voted ? (
+        {locked ? null : voted ? (
           <Button ref={nextRef} onClick={() => next(-1)} size="lg" className="rounded-full px-6">
             Next thought <ArrowRight data-icon="inline-end" />
           </Button>
@@ -172,26 +201,12 @@ export function ThoughtDeck({ initial }: { initial: Thought[] }) {
           </Button>
         )}
       </div>
-      {user === null && votedCount >= GUEST_NUDGE_AFTER ? (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center gap-3 rounded-3xl bg-accent/60 px-5 py-5 text-center text-accent-foreground sm:flex-row sm:text-left"
-        >
-          <Sparkles className="size-6 shrink-0" aria-hidden />
-          <p className="flex-1 text-sm">
-            <span className="font-semibold">Nice, that&apos;s {votedCount}.</span> Create a free account so your
-            votes count, and unlock the secret exchange. Takes 10 seconds, stays anonymous.
-          </p>
-          <Button size="sm" className="rounded-full" onClick={() => openAuth("sign-up")}>
-            Make them count
-          </Button>
-        </motion.div>
-      ) : null}
-      {swipeable && !voted ? (
+      {swipeable && !voted && !locked ? (
         <p className="text-center text-xs text-muted-foreground sm:hidden">
-          Swipe right for <span className="font-medium text-foreground">{current.options[0].toLowerCase()}</span>, left
-          for <span className="font-medium text-foreground">{current.options[1].toLowerCase()}</span>
+          Swipe right for{" "}
+          <span className="font-medium text-foreground">{current.options[0].toLowerCase()}</span>,
+          left for{" "}
+          <span className="font-medium text-foreground">{current.options[1].toLowerCase()}</span>
         </p>
       ) : null}
     </div>
@@ -203,7 +218,12 @@ const cardVariants = {
   enter: { opacity: 0, y: 14, scale: 0.97 },
   center: { opacity: 1, y: 0, scale: 1 },
   // `dir` comes from AnimatePresence's `custom`, so it's the latest swipe direction.
-  exit: (dir: 1 | -1) => ({ opacity: 0, x: dir * 320, rotate: dir * 12, transition: { duration: 0.28 } }),
+  exit: (dir: 1 | -1) => ({
+    opacity: 0,
+    x: dir * 320,
+    rotate: dir * 12,
+    transition: { duration: 0.28 },
+  }),
 };
 
 function SwipeCard({
@@ -269,7 +289,11 @@ function SwipeCard({
 
 export function ThoughtDeckSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading thoughts" className="rounded-3xl border bg-card p-6 sm:p-8">
+    <div
+      aria-busy="true"
+      aria-label="Loading thoughts"
+      className="rounded-3xl border bg-card p-6 sm:p-8"
+    >
       <div className="flex gap-2">
         <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
         <div className="h-6 w-14 animate-pulse rounded-full bg-muted" />
@@ -284,5 +308,53 @@ export function ThoughtDeckSkeleton() {
         <div className="h-12 animate-pulse rounded-xl bg-muted" />
       </div>
     </div>
+  );
+}
+
+/** Shown in place of the next card once a guest's free looks are used. */
+function GuestWall({
+  teaser,
+  onSignUp,
+  onSignIn,
+}: {
+  teaser: string;
+  onSignUp: () => void;
+  onSignIn: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      className="relative min-h-[22rem] overflow-hidden rounded-3xl border bg-card p-6 shadow-[0_1px_2px_rgb(0_0_0/0.03)] sm:p-8"
+    >
+      <p
+        aria-hidden
+        className="font-heading text-2xl leading-snug blur-[6px] select-none sm:text-[1.75rem]"
+      >
+        {teaser}
+      </p>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-card/70 p-6 text-center backdrop-blur-[2px]">
+        <span className="flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Lock className="size-5" aria-hidden />
+        </span>
+        <p className="font-heading text-2xl leading-tight">
+          That&apos;s your {GUEST_FREE_LOOKS} free looks 👀
+        </p>
+        <p className="max-w-xs text-sm text-pretty text-muted-foreground">
+          Create a free account to keep swiping, see every result and post your own. Takes 10
+          seconds. Still 100% anonymous.
+        </p>
+        <div className="mt-1 flex w-full max-w-xs flex-col gap-2">
+          <Button size="lg" className="rounded-full" onClick={onSignUp}>
+            Sign up free
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onSignIn}>
+            I already have an account
+          </Button>
+        </div>
+      </div>
+    </motion.div>
   );
 }
