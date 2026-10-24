@@ -6,21 +6,27 @@ export type Database = {
       activity: {
         Row: {
           created_at: string;
+          detail: string | null;
           id: number;
           kind: Database["public"]["Enums"]["activity_kind"];
+          target_id: string | null;
           user_id: string | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string;
+          detail?: string | null;
           id?: never;
           kind: Database["public"]["Enums"]["activity_kind"];
+          target_id?: string | null;
           user_id?: string | null;
         };
         Update: {
           created_at?: string;
+          detail?: string | null;
           id?: never;
           kind?: Database["public"]["Enums"]["activity_kind"];
+          target_id?: string | null;
           user_id?: string | null;
         };
         Relationships: [
@@ -758,6 +764,10 @@ export type Database = {
         Returns: undefined;
       };
       admin_moderation_queue: { Args: { p_limit?: number }; Returns: Json };
+      admin_recent_activity: {
+        Args: { p_before?: string; p_group?: string; p_limit?: number };
+        Returns: Json;
+      };
       admin_stats: { Args: { p_days: number; p_tz: string }; Returns: Json };
       admin_stats_range: { Args: { p_from: string; p_to: string; p_tz: string }; Returns: Json };
       admin_unban: { Args: { p_visitor: string }; Returns: undefined };

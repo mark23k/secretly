@@ -131,3 +131,31 @@ export async function getModerationQueue(): Promise<ModerationQueue> {
   if (error) throw error;
   return data as unknown as ModerationQueue;
 }
+
+export type ActivityItem = {
+  id: number;
+  kind: Database["public"]["Enums"]["activity_kind"];
+  createdAt: string;
+  /** The new post or reply's own text (never for secrets). */
+  text: string | null;
+  /** What it was about: the thought, question or answer. */
+  context: string | null;
+  /** The answer picked (votes) or the reaction key. */
+  detail: string | null;
+  status: string | null;
+  href: string | null;
+};
+
+export type ActivityGroup = "post" | "reply" | "reaction";
+
+/** Newest activity first, with no account information. Admin only. */
+export async function getRecentActivity(opts: { before?: string; group?: ActivityGroup }): Promise<ActivityItem[]> {
+  await connection();
+  const { data, error } = await createAdminClient().rpc("admin_recent_activity", {
+    p_limit: 60,
+    p_before: opts.before as string,
+    p_group: opts.group as string,
+  });
+  if (error) throw error;
+  return data as unknown as ActivityItem[];
+}

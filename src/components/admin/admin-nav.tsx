@@ -2,9 +2,16 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /** Switches between the manager pages. */
-export function AdminNav({ current, queueCount }: { current: "dashboard" | "moderation"; queueCount?: number }) {
+export function AdminNav({
+  current,
+  queueCount,
+}: {
+  current: "dashboard" | "activity" | "moderation";
+  queueCount?: number;
+}) {
   const items = [
     { value: "dashboard", href: "/admin", label: "Dashboard" },
+    { value: "activity", href: "/admin/activity", label: "Live feed" },
     { value: "moderation", href: "/admin/moderation", label: "Moderation" },
   ] as const;
   return (
