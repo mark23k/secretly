@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 /** Always dark, whatever the visitor's theme: it's the 2am corner of Secretly. */
 export default function AfterDarkPage() {
   return (
-    <div className="dark -mb-px bg-background text-foreground">
+    <div className="dark -mb-px min-h-[calc(100dvh-4rem)] bg-background text-foreground">
       <div className="relative overflow-hidden">
         <div
           aria-hidden
