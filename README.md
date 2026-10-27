@@ -62,6 +62,12 @@ localStorage, no cookies and no third-party scripts.
 Netlify's Next.js support is Netlify's own integration (not yet a Next.js-verified adapter), so test new
 Next.js upgrades on a deploy preview first.
 
+## Taking the site offline (coming soon page)
+
+In Netlify, add the environment variable `MAINTENANCE_MODE` = `1`, then Deploys → Trigger deploy.
+Every public page shows a "coming soon" page (sent as a temporary 503, so search rankings are kept).
+`/admin` and sign-in keep working. To bring the site back, delete the variable and redeploy.
+
 ## Project structure
 
 ```
