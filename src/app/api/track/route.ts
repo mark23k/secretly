@@ -1,48 +1,33 @@
-import { z } from "zod";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { getIpHash } from "@/lib/server/ip";
-import { enforceRateLimit } from "@/lib/server/rate-limit";
-import { getSessionUserId } from "@/lib/server/visitor";
+import { NextResponse, type NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
+import { db } from "@/lib/db";
 
-const schema = z.object({
-  session: z.uuid(),
-  device: z.uuid(),
-  event: z.enum(["page", "ping", "resume"]),
-});
+const COOKIE = "ss_vid";
+const BOTS = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
 
-const BOT_UA = /bot|crawl|spider|slurp|preview|headless|lighthouse|monitor/i;
+/** Records an anonymous page view. Uses a random cookie ID; never stores IPs. */
+export async function POST(req: NextRequest) {
+  const res = new NextResponse(null, { status: 204 });
+  if (BOTS.test(req.headers.get("user-agent") ?? "")) return res;
 
-/**
- * Visit heartbeat from <VisitTracker />. Powers "online now", daily visitors
- * and time on site. Always answers 204 so failures never surface to visitors.
- */
-export async function POST(request: Request) {
-  const done = new Response(null, { status: 204 });
-  if (!isSupabaseConfigured || BOT_UA.test(request.headers.get("user-agent") ?? "")) return done;
-
+  let path = "/";
   try {
-    const parsed = schema.safeParse(JSON.parse(await request.text()));
-    if (!parsed.success) return done;
-    const { session, device, event } = parsed.data;
+    const body = await req.json();
+    if (typeof body?.path === "string") path = body.path.slice(0, 200);
+  } catch {}
+  if (path.startsWith("/admin")) return res;
 
-    // Only page views can start a visit, so only they need a rate limit and
-    // the (slightly slower) session lookup.
-    let userId: string | null = null;
-    if (event === "page") {
-      await enforceRateLimit("trackVisit", { ipHash: await getIpHash() });
-      userId = await getSessionUserId();
-    }
-
-    const { error } = await createAdminClient().rpc("track_visit", {
-      p_session: session,
-      p_device: device,
-      p_user: userId as string,
-      p_event: event,
+  let visitorId = req.cookies.get(COOKIE)?.value;
+  if (!visitorId || !/^[0-9a-f-]{36}$/.test(visitorId)) {
+    visitorId = randomUUID();
+    res.cookies.set(COOKIE, visitorId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
     });
-    if (error) console.error("[track]", error.message);
-  } catch {
-    // Rate limited or malformed: drop silently.
   }
-  return done;
+  await db.pageView.create({ data: { visitorId, path } });
+  return res;
 }

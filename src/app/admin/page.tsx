@@ -1,289 +1,206 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AdminNav } from "@/components/admin/admin-nav";
-import { BarList } from "@/components/admin/bar-list";
-import { ChartCard } from "@/components/admin/chart-card";
-import { ColumnChart, type Column } from "@/components/admin/column-chart";
-import { DashboardTabs } from "@/components/admin/dashboard-tabs";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { dashboardTabs, ISO_DAY, rangeOptions, type DashboardTab } from "@/config/admin";
-import { LiveNow } from "@/components/admin/live-now";
-import { RangePicker } from "@/components/admin/range-picker";
-import { StatGrid, StatTile } from "@/components/admin/stat-tile";
-import { getAccountTimeZone, getAdminStats, getLiveStats, type AdminStats } from "@/lib/data/admin.server";
-import { requireAdminPage } from "@/lib/server/admin";
-import { addDays, dayLabel, formatDuration, rangeLabel, todayIn } from "@/lib/format";
-import { busiestHour, hourlyColumns, KIND_LABEL, ratio } from "@/lib/admin-stats";
-import { formatCount } from "@/lib/time";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import { getStats, getSummary, type Range } from "@/lib/stats";
+import { getCategory } from "@/lib/constants";
+import { timeAgo } from "@/lib/time";
+import { BarChart } from "@/components/admin/bar-chart";
+import { ModActions } from "@/components/admin/mod-actions";
 
-export const metadata: Metadata = {
-  title: "Manager dashboard",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 
-export default function AdminPage({ searchParams }: PageProps<"/admin">) {
-  return (
-    <div className="mx-auto max-w-5xl px-5 pt-10 pb-16 sm:pt-14">
-      <Suspense fallback={<DashboardSkeleton />}>
-        <Dashboard searchParams={searchParams} />
-      </Suspense>
-    </div>
-  );
-}
+type Tab = "stats" | "moderation" | "questions";
+type Props = { searchParams: Promise<{ tab?: string; range?: string }> };
 
-async function Dashboard({ searchParams }: Pick<PageProps<"/admin">, "searchParams">) {
-  const user = await requireAdminPage("/admin");
-  const params = await searchParams;
-  const tab = dashboardTabs.find((t) => t.value === params.tab)?.value ?? "overview";
-  const timeZone = await getAccountTimeZone(user.id);
-  const today = todayIn(timeZone);
+export default async function AdminPage({ searchParams }: Props) {
+  const user = await getCurrentUser();
+  if (!user?.isAdmin) notFound();
+  const sp = await searchParams;
+  const tab: Tab = sp.tab === "moderation" || sp.tab === "questions" ? sp.tab : "stats";
+  const range: Range = sp.range === "30" || sp.range === "all" ? sp.range : "7";
+  const openReports = await db.report.groupBy({ by: ["targetType", "targetId"] }).then((g) => g.length);
 
-  // Either a custom from/to range or a preset ("last N days", default 30).
-  const fromParam = typeof params.from === "string" && ISO_DAY.test(params.from) ? params.from : null;
-  const toParam = typeof params.to === "string" && ISO_DAY.test(params.to) ? params.to : null;
-  const daysParam = Number(params.days);
-  const days = fromParam && toParam ? null : (rangeOptions as readonly number[]).includes(daysParam) ? daysParam : 30;
-  const range = days === null ? { from: fromParam!, to: toParam! } : { from: addDays(today, -(days - 1)), to: today };
-
-  const [stats, live] = await Promise.all([getAdminStats(range, timeZone), getLiveStats()]);
+  const tabs: [Tab, string][] = [
+    ["stats", "📊 Stats"],
+    ["moderation", `🚩 Moderation${openReports ? ` (${openReports})` : ""}`],
+    ["questions", "📝 Recent questions"],
+  ];
 
   return (
-    <div className="space-y-8">
-      <AdminNav current="dashboard" />
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-primary uppercase">Only visible to managers</p>
-          <h1 className="text-4xl font-normal sm:text-5xl">Dashboard</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {rangeLabel(stats.from, stats.to)} ({stats.days} {stats.days === 1 ? "day" : "days"}) · times in{" "}
-            {stats.timeZone.replace(/_/g, " ")} · counts only, never who did what
-          </p>
-        </div>
-        <RangePicker days={days} from={stats.from} to={stats.to} today={today} />
-      </header>
-
-      <LiveNow initial={live} />
-
-      <DashboardTabs initial={tab as DashboardTab}>
-        <TabsContent value="overview" className="space-y-6">
-          <Overview stats={stats} />
-        </TabsContent>
-        <TabsContent value="daily" className="space-y-6">
-          <DayByDay stats={stats} />
-        </TabsContent>
-        <TabsContent value="visitors" className="space-y-6">
-          <Visitors stats={stats} />
-        </TabsContent>
-        <TabsContent value="members" className="space-y-6">
-          <Members stats={stats} />
-        </TabsContent>
-        <TabsContent value="content" className="space-y-6">
-          <Content stats={stats} />
-        </TabsContent>
-      </DashboardTabs>
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// Helpers
-// -----------------------------------------------------------------------------
-
-function dailyColumns(stats: AdminStats, pick: (d: AdminStats["daily"][number]) => number): Column[] {
-  const n = stats.daily.length;
-  const every = n <= 7 ? 1 : n <= 31 ? 7 : n <= 120 ? 15 : 60;
-  return stats.daily.map((d, i) => ({
-    key: d.day,
-    label: dayLabel(d.day, true),
-    axisLabel: (n - 1 - i) % every === 0 ? dayLabel(d.day) : undefined,
-    value: pick(d),
-  }));
-}
-
-// -----------------------------------------------------------------------------
-// Tabs
-// -----------------------------------------------------------------------------
-
-function Overview({ stats }: { stats: AdminStats }) {
-  const t = stats.totals;
-  return (
-    <>
-      <StatGrid>
-        <StatTile label="Unique visitors" value={formatCount(t.visitors)} hint={`${formatCount(t.visits)} visits`} />
-        <StatTile label="Members" value={formatCount(t.members)} hint={`+${formatCount(t.newMembers)} in this period`} />
-        <StatTile label="Posts" value={formatCount(t.posts)} hint="Thoughts, questions and secrets" />
-        <StatTile label="Interactions" value={formatCount(t.interactions)} hint="Posts, replies, votes and reactions" />
-        <StatTile label="Avg. time per visit" value={formatDuration(t.avgVisitSeconds)} hint="Time with the tab open" />
-        <StatTile label="Busiest hour" value={busiestHour(stats, (h) => h.interactions)} hint="Most interactions" />
-      </StatGrid>
-      <ChartCard title="Visitors per day" description="Unique people who opened Secretly, signed in or not.">
-        <ColumnChart data={dailyColumns(stats, (d) => d.visitors)} valueName="visitors" categoryName="Day" />
-      </ChartCard>
-    </>
-  );
-}
-
-function Visitors({ stats }: { stats: AdminStats }) {
-  const t = stats.totals;
-  return (
-    <>
-      <StatGrid>
-        <StatTile label="Unique visitors" value={formatCount(t.visitors)} hint="Counted once per browser" />
-        <StatTile label="Visits" value={formatCount(t.visits)} hint="A visit ends after 30 idle minutes" />
-        <StatTile label="Page views" value={formatCount(t.pageViews)} hint={`${ratio(t.visits ? t.pageViews / t.visits : 0)} per visit`} />
-        <StatTile label="Avg. time per visit" value={formatDuration(t.avgVisitSeconds)} hint={`Median ${formatDuration(t.medianVisitSeconds)}`} />
-        <StatTile label="Busiest hour to visit" value={busiestHour(stats, (h) => h.visits)} hint="Most visits started" />
-      </StatGrid>
-      <ChartCard title="Visitors per day" description="Unique people who opened Secretly, signed in or not.">
-        <ColumnChart data={dailyColumns(stats, (d) => d.visitors)} valueName="visitors" categoryName="Day" />
-      </ChartCard>
-      <ChartCard title="Visits by hour of day" description="When visits start, across the whole period.">
-        <ColumnChart data={hourlyColumns(stats, (h) => h.visits)} valueName="visits" categoryName="Hour" />
-      </ChartCard>
-    </>
-  );
-}
-
-function Members({ stats }: { stats: AdminStats }) {
-  const t = stats.totals;
-  return (
-    <>
-      <StatGrid>
-        <StatTile label="Members" value={formatCount(t.members)} hint="Accounts, all time" />
-        <StatTile label="New members" value={formatCount(t.newMembers)} hint="In this date range" />
-        <StatTile label="Active members" value={formatCount(t.activeMembers)} hint="Posted, replied, voted or reacted" />
-        <StatTile
-          label="Members who've posted"
-          value={formatCount(t.posters)}
-          hint={`${t.members ? Math.round((t.posters / t.members) * 100) : 0}% of all members`}
-        />
-        <StatTile label="Posts per member" value={ratio(t.postsPerMember)} hint="All time, across every member" />
-        <StatTile
-          label="Posts per posting member"
-          value={ratio(t.postsPerPoster)}
-          hint="Among members who've posted"
-        />
-      </StatGrid>
-      <ChartCard title="New members per day" description="New accounts created.">
-        <ColumnChart data={dailyColumns(stats, (d) => d.signups)} valueName="new members" categoryName="Day" />
-      </ChartCard>
-      <ChartCard title="Signed-in members visiting per day">
-        <ColumnChart data={dailyColumns(stats, (d) => d.active_members)} valueName="members" categoryName="Day" />
-      </ChartCard>
-    </>
-  );
-}
-
-function Content({ stats }: { stats: AdminStats }) {
-  const t = stats.totals;
-  const kinds = Object.entries(stats.byKind)
-    .map(([kind, value]) => ({ label: KIND_LABEL[kind] ?? kind, value }))
-    .sort((a, b) => b.value - a.value);
-  return (
-    <>
-      <StatGrid>
-        <StatTile label="Posts" value={formatCount(t.posts)} hint="Thoughts, questions and secrets" />
-        <StatTile label="Replies" value={formatCount(t.replies)} hint="Comments, answers and secret replies" />
-        <StatTile label="Votes & reactions" value={formatCount(t.reactions)} />
-        <StatTile label="All interactions" value={formatCount(t.interactions)} hint={`From ${formatCount(t.activeMembers)} members`} />
-        <StatTile label="Most active hour" value={busiestHour(stats, (h) => h.interactions)} />
-        <StatTile label="Posts per member" value={ratio(t.postsPerMember)} hint="All time" />
-      </StatGrid>
-      <ChartCard title="Most active hours" description="All interactions by hour of day, across the whole period.">
-        <ColumnChart data={hourlyColumns(stats, (h) => h.interactions)} valueName="interactions" categoryName="Hour" />
-      </ChartCard>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Posts per day">
-          <ColumnChart data={dailyColumns(stats, (d) => d.posts)} valueName="posts" categoryName="Day" height={150} />
-        </ChartCard>
-        <ChartCard title="Interactions per day">
-          <ColumnChart data={dailyColumns(stats, (d) => d.interactions)} valueName="interactions" categoryName="Day" height={150} />
-        </ChartCard>
-      </div>
-      <ChartCard title="What people do" description="Every interaction in this date range, by type.">
-        <BarList items={kinds} emptyText="Nothing yet in this period." />
-      </ChartCard>
-    </>
-  );
-}
-
-/** One row per day, newest first; each opens that day's page. */
-function DayByDay({ stats }: { stats: AdminStats }) {
-  const rows = [...stats.daily].reverse();
-  const sum = (key: "visitors" | "signups" | "posts" | "interactions") =>
-    stats.daily.reduce((n, d) => n + d[key], 0);
-  return (
-    <section aria-labelledby="daily-heading" className="space-y-3">
-      <div className="flex items-end justify-between gap-3">
-        <h2 id="daily-heading" className="font-sans text-base font-semibold tracking-normal">
-          Every day in this range
-        </h2>
-        <p className="text-xs text-muted-foreground">Tap a day for the full picture</p>
-      </div>
-      <div className="overflow-x-auto rounded-2xl border bg-card">
-        <table className="w-full min-w-[34rem] text-sm">
-          <thead className="bg-muted/60 text-xs text-muted-foreground">
-            <tr>
-              <th scope="col" className="px-4 py-2.5 text-left font-medium">Day</th>
-              <th scope="col" className="px-4 py-2.5 text-right font-medium">Visitors</th>
-              <th scope="col" className="px-4 py-2.5 text-right font-medium">Sign-ups</th>
-              <th scope="col" className="px-4 py-2.5 text-right font-medium">Posts</th>
-              <th scope="col" className="px-4 py-2.5 text-right font-medium">Interactions</th>
-              <th scope="col" className="w-8"><span className="sr-only">Open</span></th>
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {rows.map((d) => (
-              <tr key={d.day} className="group relative border-t transition-colors hover:bg-muted/40">
-                <td className="px-4 py-2.5">
-                  <Link href={`/admin/day/${d.day}`} className="font-medium after:absolute after:inset-0 group-hover:text-primary">
-                    {dayLabel(d.day, true)}
-                  </Link>
-                </td>
-                <td className="px-4 py-2.5 text-right">{d.visitors.toLocaleString("en")}</td>
-                <td className="px-4 py-2.5 text-right">{d.signups.toLocaleString("en")}</td>
-                <td className="px-4 py-2.5 text-right">{d.posts.toLocaleString("en")}</td>
-                <td className="px-4 py-2.5 text-right">{d.interactions.toLocaleString("en")}</td>
-                <td className="pr-3 text-muted-foreground"><ChevronRight className="size-4" aria-hidden /></td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="border-t bg-muted/40 font-semibold tabular-nums">
-            <tr>
-              <td className="px-4 py-2.5">Total</td>
-              <td className="px-4 py-2.5 text-right text-muted-foreground" title="Visitors are counted per day, so the total isn't unique people">
-                {sum("visitors").toLocaleString("en")}
-              </td>
-              <td className="px-4 py-2.5 text-right">{sum("signups").toLocaleString("en")}</td>
-              <td className="px-4 py-2.5 text-right">{sum("posts").toLocaleString("en")}</td>
-              <td className="px-4 py-2.5 text-right">{sum("interactions").toLocaleString("en")}</td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-8" aria-busy="true" aria-label="Loading dashboard">
-      <div className="space-y-3">
-        <Skeleton className="h-3 w-40" />
-        <Skeleton className="h-12 w-56" />
-      </div>
-      <Skeleton className="h-36 rounded-3xl" />
-      <Skeleton className="h-8 w-80" />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-28 rounded-2xl" />
+    <div className="grid gap-5">
+      <h1 className="text-2xl font-black">🤫 Admin</h1>
+      <nav className="flex gap-1.5 overflow-x-auto rounded-full bg-white p-1.5 ring-1 ring-line">
+        {tabs.map(([key, label]) => (
+          <Link
+            key={key}
+            href={`/admin?tab=${key}`}
+            className={`flex-1 whitespace-nowrap rounded-full px-3 py-2 text-center text-sm font-extrabold ${
+              tab === key ? "bg-lavender-500 text-white" : "text-ink-soft hover:bg-lavender-50"
+            }`}
+          >
+            {label}
+          </Link>
         ))}
-      </div>
-      <Skeleton className="h-72 rounded-2xl" />
+      </nav>
+      {tab === "stats" && <Stats range={range} />}
+      {tab === "moderation" && <Moderation />}
+      {tab === "questions" && <RecentQuestions />}
+    </div>
+  );
+}
+
+const METRICS = [
+  ["visitors", "Unique visitors"],
+  ["pageViews", "Page views"],
+  ["questions", "Questions"],
+  ["answers", "Answers"],
+  ["replies", "Replies"],
+  ["signups", "New sign-ups"],
+] as const;
+
+async function Stats({ range }: { range: Range }) {
+  const [summary, stats] = await Promise.all([getSummary(), getStats(range)]);
+  return (
+    <div className="grid gap-5">
+      {(["today", "allTime"] as const).map((when) => (
+        <section key={when}>
+          <h2 className="mb-2 text-sm font-extrabold uppercase tracking-wider text-ink-soft">
+            {when === "today" ? "Today" : "All time"}
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {METRICS.map(([key, name]) => (
+              <div key={key} className={`rounded-2xl p-3 ${when === "today" ? "bg-lavender-100" : "bg-white ring-1 ring-line"}`}>
+                <div className="text-2xl font-black">{summary[when][key].toLocaleString()}</div>
+                <div className="text-xs font-bold text-ink-soft">{name}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section className="grid gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-ink-soft">Per day</h2>
+          <div className="flex rounded-full bg-white p-1 text-sm font-extrabold ring-1 ring-line">
+            {(["7", "30", "all"] as const).map((r) => (
+              <Link
+                key={r}
+                href={`/admin?tab=stats&range=${r}`}
+                className={`rounded-full px-3 py-1.5 ${range === r ? "bg-lavender-500 text-white" : "text-ink-soft"}`}
+              >
+                {r === "all" ? "All time" : `${r} days`}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs text-ink-soft">
+          Visitors are counted with an anonymous cookie (no IP addresses). Seeded example posts are not counted. Hover a bar
+          for its number.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {METRICS.map(([key, name]) => (
+            <BarChart key={key} title={name} total={stats.totals[key]} data={stats.series[key]} />
+          ))}
+        </div>
+        <details className="note p-4 text-sm">
+          <summary className="cursor-pointer font-extrabold">Show as a table</summary>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-right tabular-nums">
+              <thead>
+                <tr className="text-xs text-ink-soft">
+                  <th className="py-1 text-left">Day</th>
+                  {METRICS.map(([key, name]) => <th key={key} className="px-2 py-1">{name}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {[...stats.keys].reverse().map((day, idx) => {
+                  const i = stats.keys.length - 1 - idx;
+                  return (
+                    <tr key={day} className="border-t border-line">
+                      <td className="py-1 text-left font-bold">{day}</td>
+                      {METRICS.map(([key]) => <td key={key} className="px-2 py-1">{stats.series[key][i].value}</td>)}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+    </div>
+  );
+}
+
+async function Moderation() {
+  const groups = await db.report.groupBy({
+    by: ["targetType", "targetId"],
+    _count: { _all: true },
+    _max: { createdAt: true },
+    orderBy: { _max: { createdAt: "desc" } },
+    take: 50,
+  });
+  const ids = (t: string) => groups.filter((g) => g.targetType === t).map((g) => g.targetId);
+  const [questions, answers, replies, reasons] = await Promise.all([
+    db.question.findMany({ where: { id: { in: ids("question") } }, select: { id: true, title: true, description: true } }),
+    db.answer.findMany({ where: { id: { in: ids("answer") } }, select: { id: true, body: true, questionId: true } }),
+    db.reply.findMany({ where: { id: { in: ids("reply") } }, select: { id: true, body: true, questionId: true } }),
+    db.report.findMany({ where: { targetId: { in: groups.map((g) => g.targetId) } }, select: { targetId: true, reason: true } }),
+  ]);
+
+  const items = groups.map((g) => {
+    const q = questions.find((x) => x.id === g.targetId);
+    const a = answers.find((x) => x.id === g.targetId);
+    const r = replies.find((x) => x.id === g.targetId);
+    const text = q ? `${q.title}${q.description ? ` — ${q.description}` : ""}` : (a?.body ?? r?.body);
+    const link = q ? `/q/${q.id}` : a ? `/q/${a.questionId}` : r ? `/q/${r.questionId}` : null;
+    const why = [...new Set(reasons.filter((x) => x.targetId === g.targetId).map((x) => x.reason).filter(Boolean))];
+    return { ...g, text, link, why };
+  });
+
+  if (items.length === 0) {
+    return <p className="note p-8 text-center font-bold text-ink-soft">No open reports. All quiet 🤫</p>;
+  }
+  return (
+    <div className="grid gap-3">
+      {items.map((it) => (
+        <div key={`${it.targetType}:${it.targetId}`} className="note grid gap-2 p-4">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 uppercase text-rose-700">{it.targetType}</span>
+            <span className="text-ink-soft">
+              {it._count._all} {it._count._all === 1 ? "report" : "reports"} · {it._max.createdAt && timeAgo(it._max.createdAt)}
+            </span>
+            {it.link && <Link href={it.link} className="text-lavender-700 underline">open</Link>}
+          </div>
+          <p className="whitespace-pre-line text-sm">{it.text ?? <em className="text-ink-soft">(already deleted)</em>}</p>
+          {it.why.length > 0 && <p className="text-xs text-ink-soft">Reasons: {it.why.join(", ")}</p>}
+          <ModActions targetType={it.targetType as "question"} targetId={it.targetId} showBan={!!it.text} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function RecentQuestions() {
+  const questions = await db.question.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: { id: true, title: true, category: true, createdAt: true, answerCount: true },
+  });
+  return (
+    <div className="grid gap-2">
+      {questions.map((q) => (
+        <div key={q.id} className="note flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Link href={`/q/${q.id}`} className="font-extrabold hover:text-lavender-700">{q.title}</Link>
+            <p className="text-xs text-ink-soft">
+              {getCategory(q.category)?.emoji} {getCategory(q.category)?.name} · {timeAgo(q.createdAt)} · {q.answerCount} answers
+            </p>
+          </div>
+          <ModActions targetType="question" targetId={q.id} showDismiss={false} showBan={false} />
+        </div>
+      ))}
     </div>
   );
 }

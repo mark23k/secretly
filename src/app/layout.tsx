@@ -1,77 +1,44 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
-import { Providers } from "@/components/layout/theme-provider";
-import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { Suspense } from "react";
-import { VisitTracker } from "@/components/analytics/visit-tracker";
-import { MobileTabBar, MobileTabBarLinks } from "@/components/layout/mobile-tab-bar";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { siteConfig } from "@/config/site";
+import localFont from "next/font/local";
 import "./globals.css";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { VisitTracker } from "@/components/visit-tracker";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  axes: ["SOFT", "opsz"],
+// Nunito (rounded, friendly), bundled locally so builds never depend on Google Fonts.
+const nunito = localFont({
+  src: "../assets/fonts/nunito-latin-variable.woff2",
+  weight: "200 1000",
+  variable: "--font-nunito",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: `${siteConfig.name} · ${siteConfig.tagline}`,
-    template: `%s · ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  applicationName: siteConfig.name,
+  metadataBase: new URL("https://saysecretly.com"),
+  title: { default: "SaySecretly – Say what everyone's thinking", template: "%s · SaySecretly" },
+  description:
+    "The unwritten rules of everyday life, settled anonymously. Is it rude to eat tuna on a plane? Whisper a question and find out what everyone really thinks.",
   openGraph: {
+    title: "SaySecretly",
+    description: "Say what everyone's thinking. The unwritten rules of everyday life, settled anonymously.",
+    url: "https://saysecretly.com",
+    siteName: "SaySecretly",
     type: "website",
-    siteName: siteConfig.name,
-    title: siteConfig.name,
-    description: siteConfig.description,
   },
-  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
-  viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcfaf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#16131a" },
-  ],
+  themeColor: "#fffaf3",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${inter.variable} ${fraunces.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0">
-        <Providers>
-          <TooltipProvider>
-            <SiteHeader />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
-            <Suspense fallback={<MobileTabBarLinks pathname="" />}>
-              <MobileTabBar />
-            </Suspense>
-            <Toaster position="top-center" />
-            <Suspense>
-              <VisitTracker />
-            </Suspense>
-          </TooltipProvider>
-        </Providers>
+    <html lang="en" className={nunito.variable}>
+      <body className="min-h-dvh font-sans antialiased">
+        <Header />
+        <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-4 sm:pb-16">{children}</main>
+        <Footer />
+        <VisitTracker />
       </body>
     </html>
   );

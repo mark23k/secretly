@@ -1,148 +1,118 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@theme {
+  --font-sans: var(--font-nunito), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-fraunces);
-  --font-serif: var(--font-fraunces);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-success: var(--success);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-drift: drift 18s ease-in-out infinite alternate;
+  --color-paper: #fffaf3;
+  --color-ink: #3b3150;
+  --color-ink-soft: #6f6684;
+  --color-line: #efe6da;
+
+  --color-lavender-50: #f7f3ff;
+  --color-lavender-100: #efe7ff;
+  --color-lavender-200: #dfd1ff;
+  --color-lavender-300: #c7b2fb;
+  --color-lavender-400: #a98cf2;
+  --color-lavender-500: #8d6be3;
+  --color-lavender-600: #7552c9;
+  --color-lavender-700: #5d3fa3;
+
+  --color-peach-100: #ffecdf;
+  --color-peach-200: #ffd9c2;
+  --color-peach-400: #ffb185;
+  --color-peach-700: #b25a26;
+
+  --color-mint-100: #dcf7ea;
+  --color-mint-200: #bfefd8;
+  --color-mint-400: #6fd3a5;
+  --color-mint-700: #217a52;
+
+  --color-rose-100: #ffe4ea;
+  --color-rose-400: #f58ba3;
+  --color-rose-700: #b03658;
+
+  --color-butter-100: #fff5cc;
+  --color-butter-300: #ffe27a;
 }
 
-/* Slow float for the confession snippets behind the home hero. */
-@keyframes drift {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(var(--drift-x, 24px), var(--drift-y, -18px), 0);
-  }
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* faint notebook dots, like a page torn from a notebook */
+  background-image: radial-gradient(#ecdfcf 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
-/*
- * Palette: warm paper neutrals with a single plum accent.
- * Muted text is tuned to >= 4.5:1 contrast on background in both themes.
- */
-:root {
-  --background: oklch(0.986 0.004 80);
-  --foreground: oklch(0.22 0.018 300);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.018 300);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.018 300);
-  --primary: oklch(0.45 0.13 318);
-  --primary-foreground: oklch(0.99 0.004 80);
-  --secondary: oklch(0.955 0.008 80);
-  --secondary-foreground: oklch(0.26 0.018 300);
-  --muted: oklch(0.96 0.006 80);
-  --muted-foreground: oklch(0.49 0.016 300);
-  --accent: oklch(0.95 0.025 318);
-  --accent-foreground: oklch(0.36 0.12 318);
-  --destructive: oklch(0.55 0.2 27);
-  --success: oklch(0.52 0.11 160);
-  --border: oklch(0.91 0.008 80);
-  --input: oklch(0.89 0.01 80);
-  --ring: oklch(0.45 0.13 318);
-  --radius: 0.875rem;
-}
+/* Custom pieces live in the components layer so Tailwind utilities
+   (hidden, sm:inline-flex, pl-12, ...) can still override them. */
+@layer components {
+  /* A folded-note card */
+  .note {
+    background: #fff;
+    border: 1px solid var(--color-line);
+    border-radius: 1.5rem;
+    box-shadow: 0 1px 0 #f3eadf, 0 8px 24px -12px rgba(93, 63, 163, 0.18);
+  }
 
-.dark {
-  --background: oklch(0.165 0.012 300);
-  --foreground: oklch(0.955 0.006 80);
-  --card: oklch(0.205 0.014 300);
-  --card-foreground: oklch(0.955 0.006 80);
-  --popover: oklch(0.215 0.014 300);
-  --popover-foreground: oklch(0.955 0.006 80);
-  --primary: oklch(0.78 0.1 318);
-  --primary-foreground: oklch(0.18 0.02 300);
-  --secondary: oklch(0.25 0.014 300);
-  --secondary-foreground: oklch(0.955 0.006 80);
-  --muted: oklch(0.24 0.014 300);
-  --muted-foreground: oklch(0.73 0.014 300);
-  --accent: oklch(0.28 0.045 318);
-  --accent-foreground: oklch(0.88 0.06 318);
-  --destructive: oklch(0.7 0.18 25);
-  --success: oklch(0.74 0.12 160);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.78 0.1 318);
-}
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    border-radius: 999px;
+    font-weight: 800;
+    transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn-primary {
+    background: var(--color-lavender-500);
+    color: #fff;
+    box-shadow: 0 6px 16px -8px var(--color-lavender-600);
+  }
+  .btn-primary:hover {
+    background: var(--color-lavender-600);
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+  }
+  .btn-soft {
+    background: var(--color-lavender-100);
+    color: var(--color-lavender-700);
+  }
+  .btn-soft:hover {
+    background: var(--color-lavender-200);
+  }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+  .field {
+    width: 100%;
+    border-radius: 1rem;
+    border: 1.5px solid var(--color-line);
+    background: #fff;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
-  html {
-    @apply font-sans;
-    -webkit-tap-highlight-color: transparent;
+  .field:focus {
+    border-color: var(--color-lavender-400);
+    box-shadow: 0 0 0 4px var(--color-lavender-100);
   }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "cv11", "ss01";
-  }
-  h1,
-  h2,
-  h3 {
-    @apply font-heading tracking-tight text-balance;
-  }
-  ::selection {
-    @apply bg-primary/20;
-  }
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-ring;
+  .field::placeholder {
+    color: #a59cb5;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: pop 0.3s ease;
 }

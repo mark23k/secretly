@@ -1,23 +1,13 @@
-const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 31_536_000],
-  ["month", 2_592_000],
-  ["week", 604_800],
-  ["day", 86_400],
-  ["hour", 3_600],
-  ["minute", 60],
-];
-
-/** "3 hours ago", "yesterday", "just now". */
-export function timeAgo(iso: string, now = Date.now()): string {
-  const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
-  for (const [unit, size] of UNITS) {
-    if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
-  }
-  return "just now";
-}
-
-export function formatCount(n: number): string {
-  return new Intl.NumberFormat("en", { notation: n >= 10_000 ? "compact" : "standard" }).format(n);
+export function timeAgo(date: Date | string) {
+  const seconds = Math.max(0, (Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = seconds / 60;
+  if (minutes < 60) return `${Math.floor(minutes)}m ago`;
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.floor(hours)}h ago`;
+  const days = hours / 24;
+  if (days < 30) return `${Math.floor(days)}d ago`;
+  const months = days / 30;
+  if (months < 12) return `${Math.floor(months)}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
 }
