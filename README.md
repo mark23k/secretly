@@ -49,58 +49,39 @@ What /admin shows:
 - **🚩 Moderation:** everything people reported. For each item you can **Dismiss** the report, **Delete** the post, or **Ban user** (which also deletes that post).
 - **📝 Recent questions:** the newest questions, each with a delete button.
 
-## 3. Put it live on saysecretly.com (Netlify)
+## 3. How the live site is set up
 
-Your site already lives on Netlify, and saysecretly.com already points there (DNS at Cloudflare). That stays the same. The one new thing is the database.
+| Piece | Where | Notes |
+|---|---|---|
+| Website | **Vercel** (project `saysecretly`, free Hobby plan) | Deploys automatically on every `git push` |
+| Database | **Supabase** (PostgreSQL) | The site can't use SQLite on Vercel, because serverless functions can't keep a file |
+| Domain | **Cloudflare** (bought and DNS there) | `saysecretly.com` redirects to `www.saysecretly.com`. Both records are **DNS only** (grey cloud) |
 
-> **Why a new database?** Netlify runs the site as short-lived "serverless functions" that can't keep a file between visits, so the SQLite file can't work there. The live site needs a PostgreSQL database instead.
-
-### Step A: Create a free PostgreSQL database (Supabase)
-
-1. Go to **supabase.com**, sign in, and click **New project**. Name it `saysecretly`, pick a strong database password (save it!) and the region closest to your users.
-   - Use a new project rather than your old one, so the old site's tables don't get mixed in.
-2. When it's ready, click **Connect** (top of the page).
-3. Under **Connection string**, choose **Session pooler** and copy the URI. It looks like:
-   `postgresql://postgres.abcdefgh:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres`
-4. Replace `[YOUR-PASSWORD]` with your database password.
-
-(Any PostgreSQL works: Neon, Railway, etc. You just need its connection URL.)
-
-### Step B: Set the environment variables on Netlify
-
-In Netlify, open your site, then **Site configuration → Environment variables**.
-
-1. **Delete the old site's variables** (any of these you see). The new site doesn't use them:
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-   - `APP_SECRET`, `ADMIN_EMAILS`, `MAINTENANCE_MODE`
-   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
-   - `OPENAI_API_KEY`, if it's there
-2. **Add these:**
+### Environment variables (Vercel → project → Environment Variables)
 
 | Key | Value |
 |---|---|
-| `DATABASE_URL` | the Supabase URL from Step A |
-| `SESSION_SECRET` | a **new** output of `openssl rand -hex 32` (don't reuse your local one) |
+| `DATABASE_URL` | Supabase → **Connect** → **Transaction pooler** URL (port **6543**), with your database password in place of `[YOUR-PASSWORD]` |
+| `DIRECT_URL` | Supabase → **Connect** → **Session pooler** URL (port **5432**), with the password. Used only while deploying, to update the tables |
+| `SESSION_SECRET` | the output of `openssl rand -hex 32` (the random code, not the command) |
 | `ADMIN_EMAIL` | your email |
-| `ADMIN_TIMEZONE` | optional, e.g. `America/New_York` (used for the per-day charts) |
+| `ADMIN_TIMEZONE` | optional, e.g. `America/New_York` (for the per-day charts) |
 
-### Step C: Deploy
+> **Why two database URLs?** Each visit can run in its own copy of the site, and each copy needs database connections. The Session pooler allows only 15 at a time, which runs out quickly. The Transaction pooler shares connections and handles many visitors. Changing tables needs a steady connection, so deploys use the Session pooler through `DIRECT_URL`.
 
-Push the code to GitHub:
+### Deploying
 
 ```bash
 git push
 ```
 
-Netlify builds automatically. On every deploy it runs `npm run deploy:build`, which:
+Vercel runs `npm run deploy:build` (set in `vercel.json`), which:
 
 1. Creates or updates the database tables.
-2. Adds the example questions, but **only if the database is empty** (so it never duplicates them).
+2. Adds the example questions, but **only if the database is empty**.
 3. Builds the site.
 
-When the deploy is green, open **https://saysecretly.com**, sign up with your `ADMIN_EMAIL`, and you're the admin. 🎉
-
-The old `sharesecretly.netlify.app` address still redirects to saysecretly.com. That rule is in `netlify.toml`.
+After changing an environment variable, redeploy: Vercel → **Deployments** → **⋯** on the newest one → **Redeploy**.
 
 ---
 
