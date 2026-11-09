@@ -83,11 +83,10 @@ export async function getFeed(opts: {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const ids = rows.map((r) => r.id);
     const recent = { createdAt: { gte: since }, questionId: { in: ids } };
-    const [answers, replies, guilties] = await Promise.all([
-      db.answer.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } }),
-      db.reply.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } }),
-      db.guilty.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } }),
-    ]);
+    // One after another (not in parallel) to stay gentle on database connections.
+    const answers = await db.answer.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } });
+    const replies = await db.reply.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } });
+    const guilties = await db.guilty.groupBy({ by: ["questionId"], where: recent, _count: { _all: true } });
     const activity = new Map<string, number>();
     const add = (id: string, n: number) => activity.set(id, (activity.get(id) ?? 0) + n);
     answers.forEach((g) => add(g.questionId, g._count._all * 3));

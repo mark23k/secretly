@@ -6,6 +6,7 @@ export function CategoryChips({ active }: { active?: string }) {
     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
       <Link
         href="/"
+        prefetch={false}
         className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-bold ring-1 ring-line ${
           !active ? "bg-ink text-white" : "bg-white text-ink-soft hover:bg-lavender-50"
         }`}
@@ -16,6 +17,7 @@ export function CategoryChips({ active }: { active?: string }) {
         <Link
           key={c.slug}
           href={`/c/${c.slug}`}
+          prefetch={false}
           className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-bold ring-1 ring-line ${
             active === c.slug ? "bg-ink text-white" : "bg-white text-ink-soft hover:bg-lavender-50"
           }`}

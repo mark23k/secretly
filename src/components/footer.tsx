@@ -16,7 +16,7 @@ export function Footer() {
           <p className="font-bold text-ink">🤫 SaySecretly: say what everyone&apos;s thinking.</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">
             {CATEGORIES.map((c) => (
-              <Link key={c.slug} href={`/c/${c.slug}`} className="hover:text-lavender-700">
+              <Link key={c.slug} href={`/c/${c.slug}`} prefetch={false} className="hover:text-lavender-700">
                 {c.emoji} {c.name}
               </Link>
             ))}

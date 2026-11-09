@@ -15,6 +15,7 @@ export function FeedTabs({ active, basePath }: { active: FeedTab; basePath: stri
           key={t.key}
           href={t.key === "trending" ? basePath : `${basePath}?tab=${t.key}`}
           scroll={false}
+          prefetch={false}
           className={`flex-1 whitespace-nowrap rounded-full px-3 py-2 text-center text-sm font-extrabold transition ${
             active === t.key ? "bg-lavender-500 text-white shadow" : "text-ink-soft hover:bg-lavender-50"
           }`}

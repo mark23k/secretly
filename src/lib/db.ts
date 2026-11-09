@@ -15,7 +15,17 @@ function createClient() {
   }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { PrismaPg } = require("@prisma/adapter-pg");
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  // On Vercel every request can run in its own copy of the app, so each copy
+  // keeps only a couple of connections and releases idle ones quickly.
+  // Otherwise many visitors at once can exhaust the database's connection limit.
+  return new PrismaClient({
+    adapter: new PrismaPg({
+      connectionString: url,
+      max: Number(process.env.DB_POOL_MAX ?? 2),
+      idleTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 10_000,
+    }),
+  });
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

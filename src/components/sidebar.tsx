@@ -13,11 +13,11 @@ export function CategorySidebar({ active }: { active?: string }) {
     <aside className="hidden lg:block">
       <nav className="sticky top-20 grid gap-0.5">
         <p className="mb-1 px-3 text-xs font-extrabold uppercase tracking-wider text-ink-soft">Categories</p>
-        <Link href="/" className={item(!active)}>
+        <Link href="/" prefetch={false} className={item(!active)}>
           <span className="w-5 text-center">🌈</span> Everything
         </Link>
         {CATEGORIES.map((c) => (
-          <Link key={c.slug} href={`/c/${c.slug}`} className={item(active === c.slug)}>
+          <Link key={c.slug} href={`/c/${c.slug}`} prefetch={false} className={item(active === c.slug)}>
             <span className="w-5 text-center">{c.emoji}</span> {c.name}
           </Link>
         ))}
@@ -36,7 +36,7 @@ export async function RightRail() {
           <h2 className="mb-3 text-sm font-black">⚖️ Hot debates</h2>
           <div className="grid gap-3">
             {hot.map((q) => (
-              <Link key={q.id} href={`/q/${q.id}`} className="group grid gap-1.5">
+              <Link key={q.id} href={`/q/${q.id}`} prefetch={false} className="group grid gap-1.5">
                 <span className="text-sm font-bold leading-snug group-hover:text-lavender-700">{q.title}</span>
                 <MiniVerdictBar {...q} />
               </Link>

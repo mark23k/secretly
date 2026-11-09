@@ -11,6 +11,7 @@ export function QuestionCard({ q, index = 0 }: { q: Card; index?: number }) {
   return (
     <Link
       href={`/q/${q.id}`}
+      prefetch={false}
       className={`note flex h-full flex-col p-4 transition hover:-translate-y-0.5 sm:p-5 ${TINTS[index % TINTS.length]}`}
     >
       <div className="mb-2 flex items-center justify-between gap-2 text-xs font-bold text-ink-soft">
