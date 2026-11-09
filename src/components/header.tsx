@@ -2,18 +2,22 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { logOut } from "@/app/actions/auth";
 import { Logo } from "./logo";
+import { SearchBox } from "./search-box";
 
 export async function Header() {
   const user = await getCurrentUser();
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-paper/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4 lg:max-w-6xl lg:gap-6 lg:px-6">
         <Logo />
+        <div className="hidden max-w-md flex-1 lg:block">
+          <SearchBox compact />
+        </div>
         <nav className="flex items-center gap-1.5 text-sm font-bold sm:gap-2">
           <Link
             href="/search"
             aria-label="Search"
-            className="grid size-10 place-items-center rounded-full text-lg hover:bg-lavender-100"
+            className="grid size-10 place-items-center rounded-full text-lg hover:bg-lavender-100 lg:hidden"
           >
             🔍
           </Link>

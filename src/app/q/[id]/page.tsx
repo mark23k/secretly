@@ -64,7 +64,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   );
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+      <div className="grid gap-5 lg:sticky lg:top-20">
       <Link href="/" className="text-sm font-bold text-ink-soft hover:text-lavender-700">← Back to the feed</Link>
 
       <article className="note p-5 sm:p-7">
@@ -90,7 +91,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           <GuiltyButton id={id} active={!!guilty} count={question.guiltyCount} signedIn={signedIn} loginHref={loginHref} />
         </div>
       </article>
+      </div>
 
+      <div className="grid min-w-0 gap-5">
       <section className="grid gap-3">
         {!user ? (
           <div className="note flex flex-col items-center gap-3 p-6 text-center">
@@ -175,6 +178,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           );
         })}
       </section>
+      </div>
     </div>
   );
 }

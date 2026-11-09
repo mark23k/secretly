@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={nunito.variable}>
       <body className="min-h-dvh font-sans antialiased">
         <Header />
-        <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-4 sm:pb-16">{children}</main>
+        <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-4 sm:pb-16 lg:max-w-6xl lg:px-6 lg:pt-6">{children}</main>
         <Footer />
         <VisitTracker />
       </body>

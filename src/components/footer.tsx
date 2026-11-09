@@ -11,7 +11,7 @@ export function Footer() {
       >
         ✏️ Whisper a question
       </Link>
-      <footer className="mx-auto max-w-3xl px-4 pb-10 pt-4 text-sm text-ink-soft">
+      <footer className="mx-auto max-w-3xl px-4 pb-10 pt-4 text-sm text-ink-soft lg:max-w-6xl lg:px-6">
         <div className="note flex flex-col gap-4 p-5">
           <p className="font-bold text-ink">🤫 SaySecretly: say what everyone&apos;s thinking.</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1.5">

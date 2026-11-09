@@ -3,7 +3,7 @@ import { CATEGORIES } from "@/lib/constants";
 
 export function CategoryChips({ active }: { active?: string }) {
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
       <Link
         href="/"
         className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-bold ring-1 ring-line ${

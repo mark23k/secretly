@@ -59,7 +59,7 @@ export function BarChart({ title, total, data }: { title: string; total: number;
                 />
               )}
               {i % every === 0 && (
-                <text x={PAD_L + i * slot + slot / 2} y={H - 6} textAnchor="middle" fontSize={11} fill="#8a819c">
+                <text x={PAD_L + i * slot + slot / 2} y={plotH + 15} textAnchor="middle" fontSize={11} fill="#8a819c">
                   {label(d.day)}
                 </text>
               )}

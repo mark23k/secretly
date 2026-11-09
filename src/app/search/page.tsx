@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getFeed } from "@/lib/queries";
 import { FeedList } from "@/components/feed-list";
 import { SearchBox } from "@/components/search-box";
+import { BrowseLayout } from "@/components/sidebar";
 
 export const metadata: Metadata = { title: "Search" };
 
@@ -11,7 +12,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const feed = q ? await getFeed({ tab: "newest", query: q }) : null;
 
   return (
-    <div className="grid gap-5">
+    <BrowseLayout>
       <h1 className="text-2xl font-black">Search</h1>
       <SearchBox defaultValue={q} autoFocus={!q} />
       {feed ? (
@@ -38,6 +39,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       ) : (
         <p className="text-center text-ink-soft">Search questions and answers. Try &ldquo;plane&rdquo;, &ldquo;roommate&rdquo; or &ldquo;tip&rdquo;.</p>
       )}
-    </div>
+    </BrowseLayout>
   );
 }

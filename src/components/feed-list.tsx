@@ -23,7 +23,7 @@ export function FeedList({ initial, initialHasMore, tab, category, query, empty 
 
   return (
     <div>
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:gap-4">
         {items.map((q, i) => (
           <QuestionCard key={q.id} q={q} index={i} />
         ))}

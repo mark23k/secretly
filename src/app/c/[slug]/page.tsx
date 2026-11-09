@@ -6,6 +6,7 @@ import { getFeed } from "@/lib/queries";
 import { FeedList } from "@/components/feed-list";
 import { FeedTabs, parseTab } from "@/components/feed-tabs";
 import { CategoryChips } from "@/components/category-chips";
+import { BrowseLayout } from "@/components/sidebar";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ tab?: string }> };
 
@@ -22,11 +23,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const feed = await getFeed({ tab, category: slug });
 
   return (
-    <div className="grid gap-5">
-      <section className="rounded-[2rem] bg-lavender-100 px-5 py-7 text-center">
+    <BrowseLayout active={slug}>
+      <section className="rounded-[2rem] bg-lavender-100 px-5 py-7 text-center lg:flex lg:items-center lg:gap-5 lg:px-8 lg:py-6 lg:text-left">
         <p className="text-5xl">{cat.emoji}</p>
-        <h1 className="mt-2 text-3xl font-black">{cat.name}</h1>
-        <p className="mt-1 text-ink-soft">The unwritten rules of {cat.name.toLowerCase()}.</p>
+        <div>
+          <h1 className="mt-2 text-3xl font-black lg:mt-0">{cat.name}</h1>
+          <p className="mt-1 text-ink-soft">The unwritten rules of {cat.name.toLowerCase()}.</p>
+        </div>
       </section>
       <CategoryChips active={slug} />
       <FeedTabs active={tab} basePath={`/c/${slug}`} />
@@ -43,6 +46,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           </div>
         }
       />
-    </div>
+    </BrowseLayout>
   );
 }

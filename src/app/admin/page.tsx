@@ -69,7 +69,7 @@ async function Stats({ range }: { range: Range }) {
           <h2 className="mb-2 text-sm font-extrabold uppercase tracking-wider text-ink-soft">
             {when === "today" ? "Today" : "All time"}
           </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {METRICS.map(([key, name]) => (
               <div key={key} className={`rounded-2xl p-3 ${when === "today" ? "bg-lavender-100" : "bg-white ring-1 ring-line"}`}>
                 <div className="text-2xl font-black">{summary[when][key].toLocaleString()}</div>
@@ -99,7 +99,7 @@ async function Stats({ range }: { range: Range }) {
           Visitors are counted with an anonymous cookie (no IP addresses). Seeded example posts are not counted. Hover a bar
           for its number.
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {METRICS.map(([key, name]) => (
             <BarChart key={key} title={name} total={stats.totals[key]} data={stats.series[key]} />
           ))}
@@ -163,7 +163,7 @@ async function Moderation() {
     return <p className="note p-8 text-center font-bold text-ink-soft">No open reports. All quiet 🤫</p>;
   }
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 lg:grid-cols-2">
       {items.map((it) => (
         <div key={`${it.targetType}:${it.targetId}`} className="note grid gap-2 p-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
@@ -189,7 +189,7 @@ async function RecentQuestions() {
     select: { id: true, title: true, category: true, createdAt: true, answerCount: true },
   });
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 lg:grid-cols-2">
       {questions.map((q) => (
         <div key={q.id} className="note flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
